@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Estate Lead Form</title>
 
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 35px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 7px;
+      background: #111;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    #response {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>Find Your Property</h1>
+
+    <p class="subtitle">
+      Tell us what you're looking for and our team will get back to you.
+    </p>
+
+    <form id="leadForm">
+
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" required>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" required>
+      </div>
+
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="tel" name="phone" required>
+      </div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" name="location" placeholder="e.g. Uyo" required>
+      </div>
+
+      <div class="form-group">
+        <label>Property Type</label>
+        <select name="property_type" required>
+          <option value="">Select property type</option>
+          <option value="House">House</option>
+          <option value="Apartment">Apartment</option>
+          <option value="Land">Land</option>
+          <option value="Commercial">Commercial Property</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Purpose</label>
+        <select name="purpose" required>
+          <option value="">Select purpose</option>
+          <option value="Buy">Buy</option>
+          <option value="Rent">Rent</option>
+          <option value="Sell">Sell</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Budget</label>
+        <input type="text" name="budget" placeholder="e.g. 50000000" required>
+      </div>
+
+      <div class="form-group">
+        <label>Timeline</label>
+        <select name="timeline" required>
+          <option value="">Select timeline</option>
+          <option value="Immediately">Immediately</option>
+          <option value="1 month">Within 1 month</option>
+          <option value="3 months">Within 3 months</option>
+          <option value="6 months">Within 6 months</option>
+          <option value="12 months">Within 12 months</option>
+          <option value="Not sure">Not sure</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Message</label>
+        <textarea
+          name="message"
+          placeholder="Tell us more about the property you need..."
+          required
+        ></textarea>
+      </div>
+
+      <button type="submit">
+        Submit Property Request
+      </button>
+
+      <div id="response"></div>
+
+    </form>
+
+  </div>
+
+  <script>
+
+    const form = document.getElementById("leadForm");
+    const response = document.getElementById("response");
+
+    form.addEventListener("submit", async function(event) {
+
+      event.preventDefault();
+
+      const formData = new FormData(form);
+
+      const data = {
+        name: formData.get("name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        location: formData.get("location"),
+        property_type: formData.get("property_type"),
+        purpose: formData.get("purpose"),
+        budget: formData.get("budget"),
+        timeline: formData.get("timeline"),
+        message: formData.get("message"),
+        source: "real-estate-webhook"
+      };
+
+      response.textContent = "Submitting...";
+
+      try {
+
+        const result = await fetch("YOUR_N8N_WEBHOOK_URL", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (result.ok) {
+          response.textContent =
+            "Thank you! Your property request has been submitted.";
+          form.reset();
+        } else {
+          response.textContent =
+            "Something went wrong. Please try again.";
+        }
+
+      } catch (error) {
+
+        response.textContent =
+          "Unable to submit your request. Please try again.";
+
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>
