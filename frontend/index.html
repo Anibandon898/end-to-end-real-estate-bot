@@ -1,0 +1,282 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Bot</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 700px;
+            margin: 50px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            background: #111;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .success {
+            background: #e8f7e8;
+            color: #176b17;
+        }
+
+        .error {
+            background: #fdeaea;
+            color: #9b1c1c;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>Find Your Property</h1>
+
+        <p class="subtitle">
+            Tell us what you are looking for and our team will get back to you.
+        </p>
+
+        <form id="leadForm">
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" placeholder="e.g. Uyo" required>
+            </div>
+
+            <div class="form-group">
+                <label for="property_type">Property Type</label>
+
+                <select id="property_type" required>
+                    <option value="">Select property type</option>
+                    <option value="House">House</option>
+                    <option value="Apartment">Apartment</option>
+                    <option value="Land">Land</option>
+                    <option value="Office">Office</option>
+                    <option value="Shop">Shop</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="budget">Budget (₦)</label>
+                <input type="number" id="budget" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bedrooms">Bedrooms</label>
+                <input type="number" id="bedrooms" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="purpose">Purpose</label>
+
+                <select id="purpose" required>
+                    <option value="">Select purpose</option>
+                    <option value="Buying">Buying</option>
+                    <option value="Renting">Renting</option>
+                    <option value="Investment">Investment</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="timeline">Timeline</label>
+
+                <select id="timeline" required>
+                    <option value="">Select timeline</option>
+                    <option value="Immediately">Immediately</option>
+                    <option value="1 month">Within 1 month</option>
+                    <option value="3 months">Within 3 months</option>
+                    <option value="6 months">Within 6 months</option>
+                    <option value="1 year">Within 1 year</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Tell us more</label>
+                <textarea
+                    id="message"
+                    placeholder="Describe the property you are looking for..."
+                ></textarea>
+            </div>
+
+            <button type="submit">
+                Submit Property Request
+            </button>
+
+        </form>
+
+        <div id="result"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const form = document.getElementById("leadForm");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        result.style.display = "block";
+        result.className = "";
+        result.textContent = "Submitting your request...";
+
+        const leadData = {
+
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("phone").value,
+            location: document.getElementById("location").value,
+            property_type: document.getElementById("property_type").value,
+            budget: Number(document.getElementById("budget").value),
+            bedrooms: Number(document.getElementById("bedrooms").value),
+            purpose: document.getElementById("purpose").value,
+            timeline: document.getElementById("timeline").value,
+            message: document.getElementById("message").value,
+            lead_quality: "",
+            main_problem: "",
+            recommended_action: "",
+            source: "frontend"
+        };
+
+        try {
+
+            const response = await fetch(
+                "http://127.0.0.1:8000/api/v1/leads",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(leadData)
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || "Something went wrong."
+                );
+            }
+
+            result.className = "success";
+
+            result.textContent =
+                "Your property request has been submitted successfully!";
+
+            form.reset();
+
+        } catch (error) {
+
+            result.className = "error";
+
+            result.textContent =
+                "Unable to submit your request. Please make sure the FastAPI server is running.";
+
+            console.error(error);
+        }
+
+    });
+
+</script>
+
+</body>
+</html>
+```
