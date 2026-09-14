@@ -1,0 +1,1536 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EstateFlow | Real Estate Assistant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #111111;
+            --secondary: #1f2937;
+            --accent: #c89b3c;
+            --accent-light: #f5ead0;
+            --background: #f5f6f8;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #15803d;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* =========================
+           MAIN APP
+        ========================= */
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================
+           TOP NAVIGATION
+        ========================= */
+
+        .navbar {
+            height: 72px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 5%;
+
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+
+            background: var(--primary);
+            color: var(--accent);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .brand-text h2 {
+            font-size: 18px;
+        }
+
+        .brand-text span {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* =========================
+           CONTENT
+        ========================= */
+
+        .main {
+            width: 92%;
+            max-width: 1250px;
+
+            margin: 30px auto;
+
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+
+            gap: 25px;
+
+            flex: 1;
+        }
+
+        /* =========================
+           LEFT PANEL
+        ========================= */
+
+        .intro-panel {
+            background: var(--primary);
+            color: white;
+
+            border-radius: 24px;
+
+            padding: 45px 40px;
+
+            min-height: 680px;
+
+            position: relative;
+            overflow: hidden;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .intro-panel::before {
+            content: "";
+
+            position: absolute;
+
+            width: 300px;
+            height: 300px;
+
+            border: 1px solid rgba(200,155,60,0.35);
+
+            border-radius: 50%;
+
+            right: -100px;
+            top: -80px;
+        }
+
+        .intro-panel::after {
+            content: "";
+
+            position: absolute;
+
+            width: 220px;
+            height: 220px;
+
+            border: 1px solid rgba(200,155,60,0.2);
+
+            border-radius: 50%;
+
+            left: -100px;
+            bottom: -80px;
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .eyebrow {
+            display: inline-block;
+
+            padding: 8px 13px;
+
+            background: rgba(200,155,60,0.15);
+
+            border: 1px solid rgba(200,155,60,0.3);
+
+            border-radius: 50px;
+
+            color: #e8c875;
+
+            font-size: 11px;
+
+            letter-spacing: 1px;
+
+            text-transform: uppercase;
+
+            margin-bottom: 25px;
+        }
+
+        .intro-panel h1 {
+            font-size: clamp(34px, 4vw, 56px);
+
+            line-height: 1.05;
+
+            margin-bottom: 20px;
+        }
+
+        .intro-panel h1 span {
+            color: var(--accent);
+        }
+
+        .intro-description {
+            color: #b9bec7;
+
+            font-size: 15px;
+
+            line-height: 1.7;
+
+            max-width: 470px;
+        }
+
+        /* =========================
+           FEATURES
+        ========================= */
+
+        .features {
+            margin-top: 35px;
+
+            display: grid;
+
+            gap: 13px;
+        }
+
+        .feature {
+            display: flex;
+
+            align-items: center;
+
+            gap: 13px;
+
+            color: #d1d5db;
+
+            font-size: 13px;
+        }
+
+        .feature-icon {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 9px;
+
+            background: rgba(255,255,255,0.08);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: var(--accent);
+        }
+
+        /* =========================
+           BOTTOM STATS
+        ========================= */
+
+        .stats {
+            position: relative;
+            z-index: 2;
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 10px;
+        }
+
+        .stat {
+            padding: 15px;
+
+            background: rgba(255,255,255,0.06);
+
+            border: 1px solid rgba(255,255,255,0.08);
+
+            border-radius: 13px;
+        }
+
+        .stat strong {
+            display: block;
+
+            font-size: 20px;
+
+            color: var(--accent);
+
+            margin-bottom: 4px;
+        }
+
+        .stat span {
+            color: #9ca3af;
+
+            font-size: 10px;
+        }
+
+        /* =========================
+           CHAT PANEL
+        ========================= */
+
+        .chat-panel {
+            background: white;
+
+            border: 1px solid var(--border);
+
+            border-radius: 24px;
+
+            overflow: hidden;
+
+            display: flex;
+
+            flex-direction: column;
+
+            min-height: 680px;
+
+            box-shadow: 0 15px 50px rgba(0,0,0,0.06);
+        }
+
+        /* =========================
+           CHAT HEADER
+        ========================= */
+
+        .chat-header {
+            padding: 20px 22px;
+
+            border-bottom: 1px solid var(--border);
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+        }
+
+        .assistant-info {
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+        }
+
+        .assistant-avatar {
+            width: 45px;
+            height: 45px;
+
+            background: var(--primary);
+
+            border-radius: 13px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: var(--accent);
+
+            font-size: 20px;
+
+            position: relative;
+        }
+
+        .online-dot {
+            position: absolute;
+
+            width: 10px;
+            height: 10px;
+
+            background: #22c55e;
+
+            border: 2px solid white;
+
+            border-radius: 50%;
+
+            right: -2px;
+            bottom: -2px;
+        }
+
+        .assistant-name {
+            font-weight: bold;
+
+            font-size: 15px;
+        }
+
+        .assistant-status {
+            color: var(--success);
+
+            font-size: 11px;
+
+            margin-top: 3px;
+        }
+
+        .reset-button {
+            border: 1px solid var(--border);
+
+            background: white;
+
+            padding: 9px 12px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+            color: var(--muted);
+        }
+
+        .reset-button:hover {
+            background: #f9fafb;
+        }
+
+        /* =========================
+           CHAT BODY
+        ========================= */
+
+        .chat-body {
+            flex: 1;
+
+            padding: 22px;
+
+            overflow-y: auto;
+
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(200,155,60,0.06),
+                    transparent 30%
+                ),
+                #fafafa;
+        }
+
+        .date-label {
+            text-align: center;
+
+            color: #9ca3af;
+
+            font-size: 10px;
+
+            margin-bottom: 18px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .message-row {
+            display: flex;
+
+            margin-bottom: 17px;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .message {
+            max-width: 80%;
+
+            padding: 13px 15px;
+
+            border-radius: 15px;
+
+            font-size: 14px;
+
+            line-height: 1.55;
+        }
+
+        .message.bot {
+            background: white;
+
+            border: 1px solid var(--border);
+
+            border-top-left-radius: 5px;
+
+            color: #374151;
+        }
+
+        .message.user {
+            background: var(--primary);
+
+            color: white;
+
+            border-top-right-radius: 5px;
+        }
+
+        .message-time {
+            display: block;
+
+            font-size: 9px;
+
+            margin-top: 7px;
+
+            opacity: 0.55;
+        }
+
+        /* =========================
+           QUICK ACTIONS
+        ========================= */
+
+        .quick-actions {
+            display: flex;
+
+            gap: 8px;
+
+            flex-wrap: wrap;
+
+            margin-top: 12px;
+        }
+
+        .quick-button {
+            border: 1px solid #ddd;
+
+            background: white;
+
+            color: #374151;
+
+            padding: 9px 12px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .quick-button:hover {
+            border-color: var(--accent);
+
+            color: #8a681e;
+
+            background: var(--accent-light);
+        }
+
+        /* =========================
+           TYPING
+        ========================= */
+
+        .typing {
+            display: none;
+
+            align-items: center;
+
+            gap: 5px;
+
+            padding: 12px 15px;
+
+            background: white;
+
+            border: 1px solid var(--border);
+
+            border-radius: 15px;
+
+            width: fit-content;
+        }
+
+        .typing span {
+            width: 6px;
+            height: 6px;
+
+            background: #9ca3af;
+
+            border-radius: 50%;
+
+            animation: typing 1.2s infinite;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* =========================
+           INPUT AREA
+        ========================= */
+
+        .input-wrapper {
+            padding: 15px;
+
+            border-top: 1px solid var(--border);
+
+            background: white;
+        }
+
+        .input-box {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            background: #f7f7f8;
+
+            border: 1px solid var(--border);
+
+            border-radius: 13px;
+
+            padding: 6px;
+        }
+
+        #messageInput {
+            flex: 1;
+
+            border: none;
+
+            outline: none;
+
+            background: transparent;
+
+            padding: 11px;
+
+            font-size: 14px;
+
+            color: var(--text);
+        }
+
+        #messageInput::placeholder {
+            color: #9ca3af;
+        }
+
+        #sendButton {
+            width: 42px;
+            height: 42px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: var(--primary);
+
+            color: white;
+
+            cursor: pointer;
+
+            font-size: 17px;
+
+            transition: 0.2s;
+        }
+
+        #sendButton:hover {
+            background: #2c2c2c;
+
+            transform: translateY(-1px);
+        }
+
+        .input-note {
+            text-align: center;
+
+            color: #9ca3af;
+
+            font-size: 9px;
+
+            margin-top: 8px;
+        }
+
+        /* =========================
+           PROPERTY CARD
+        ========================= */
+
+        .property-card {
+            margin-top: 10px;
+
+            background: white;
+
+            border: 1px solid var(--border);
+
+            border-radius: 14px;
+
+            overflow: hidden;
+        }
+
+        .property-image {
+            height: 100px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #222,
+                    #555
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: white;
+
+            font-size: 28px;
+        }
+
+        .property-content {
+            padding: 12px;
+        }
+
+        .property-title {
+            font-weight: bold;
+
+            font-size: 13px;
+
+            margin-bottom: 5px;
+        }
+
+        .property-details {
+            color: var(--muted);
+
+            font-size: 10px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .intro-panel {
+                min-height: auto;
+
+                padding: 35px;
+            }
+
+            .chat-panel {
+                min-height: 650px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-status {
+                display: none;
+            }
+
+            .main {
+                width: 94%;
+
+                margin: 15px auto;
+
+                gap: 15px;
+            }
+
+            .intro-panel {
+                border-radius: 18px;
+
+                padding: 28px;
+
+                min-height: 420px;
+            }
+
+            .intro-panel h1 {
+                font-size: 38px;
+            }
+
+            .chat-panel {
+                border-radius: 18px;
+
+                min-height: 620px;
+            }
+
+            .stats {
+                margin-top: 30px;
+            }
+
+            .message {
+                max-width: 88%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         NAVIGATION
+    ========================== -->
+
+    <nav class="navbar">
+
+        <div class="brand">
+
+            <div class="brand-logo">
+                E
+            </div>
+
+            <div class="brand-text">
+                <h2>EstateFlow</h2>
+                <span>Smart Property Discovery</span>
+            </div>
+
+        </div>
+
+        <div class="nav-status">
+
+            <div class="status-dot"></div>
+
+            Assistant Online
+
+        </div>
+
+    </nav>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main class="main">
+
+
+        <!-- =========================
+             INTRO PANEL
+        ========================== -->
+
+        <section class="intro-panel">
+
+            <div class="intro-content">
+
+                <div class="eyebrow">
+                    AI PROPERTY ASSISTANT
+                </div>
+
+                <h1>
+                    Find a place<br>
+                    that feels like <span>home.</span>
+                </h1>
+
+                <p class="intro-description">
+                    Tell our property assistant what you are looking for.
+                    We'll help you define your requirements and connect
+                    you with the right real estate opportunities.
+                </p>
+
+
+                <div class="features">
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ✓
+                        </div>
+
+                        <span>
+                            Understands your property requirements
+                        </span>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ₦
+                        </div>
+
+                        <span>
+                            Works with your budget
+                        </span>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ⚡
+                        </div>
+
+                        <span>
+                            Smart lead qualification
+                        </span>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ◆
+                        </div>
+
+                        <span>
+                            Connects you with property experts
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="stats">
+
+                <div class="stat">
+                    <strong>24/7</strong>
+                    <span>Assistant</span>
+                </div>
+
+                <div class="stat">
+                    <strong>AI</strong>
+                    <span>Powered</span>
+                </div>
+
+                <div class="stat">
+                    <strong>1:1</strong>
+                    <span>Assistance</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             CHAT PANEL
+        ========================== -->
+
+        <section class="chat-panel">
+
+
+            <!-- CHAT HEADER -->
+
+            <div class="chat-header">
+
+                <div class="assistant-info">
+
+                    <div class="assistant-avatar">
+
+                        ◆
+
+                        <div class="online-dot"></div>
+
+                    </div>
+
+                    <div>
+
+                        <div class="assistant-name">
+                            EstateFlow Assistant
+                        </div>
+
+                        <div class="assistant-status">
+                            ● Online • Ready to help
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="reset-button"
+                    onclick="resetChat()"
+                >
+                    New Chat
+                </button>
+
+            </div>
+
+
+            <!-- CHAT BODY -->
+
+            <div
+                class="chat-body"
+                id="chatBox"
+            >
+
+                <div class="date-label">
+                    Today
+                </div>
+
+
+                <!-- FIRST BOT MESSAGE -->
+
+                <div class="message-row">
+
+                    <div class="message bot">
+
+                        Hello! 👋 I'm your EstateFlow property assistant.
+
+                        <br><br>
+
+                        I can help you find the right property based on
+                        your location, budget, property type and timeline.
+
+                        <br><br>
+
+                        What kind of property are you looking for?
+
+                        <span class="message-time">
+                            Just now
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- QUICK ACTIONS -->
+
+                <div class="quick-actions">
+
+                    <button
+                        class="quick-button"
+                        onclick="quickMessage('I am looking for a house')"
+                    >
+                        🏠 Find a house
+                    </button>
+
+                    <button
+                        class="quick-button"
+                        onclick="quickMessage('I am looking for an apartment')"
+                    >
+                        🏢 Find an apartment
+                    </button>
+
+                    <button
+                        class="quick-button"
+                        onclick="quickMessage('I am looking for land')"
+                    >
+                        🌍 Find land
+                    </button>
+
+                    <button
+                        class="quick-button"
+                        onclick="quickMessage('I want to invest in property')"
+                    >
+                        📈 Property investment
+                    </button>
+
+                </div>
+
+
+                <!-- TYPING INDICATOR -->
+
+                <div
+                    class="message-row"
+                    id="typingRow"
+                >
+
+                    <div
+                        class="typing"
+                        id="typingIndicator"
+                    >
+
+                        <span></span>
+                        <span></span>
+                        <span></span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- INPUT -->
+
+            <div class="input-wrapper">
+
+                <div class="input-box">
+
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Tell me what property you need..."
+                        autocomplete="off"
+                    >
+
+                    <button
+                        id="sendButton"
+                        title="Send message"
+                    >
+                        ➤
+                    </button>
+
+                </div>
+
+                <div class="input-note">
+                    Your information helps us understand your property needs.
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script>
+
+    /* =====================================
+       ELEMENTS
+    ====================================== */
+
+    const chatBox =
+        document.getElementById("chatBox");
+
+    const messageInput =
+        document.getElementById("messageInput");
+
+    const sendButton =
+        document.getElementById("sendButton");
+
+    const typingRow =
+        document.getElementById("typingRow");
+
+    const typingIndicator =
+        document.getElementById("typingIndicator");
+
+
+    /* =====================================
+       ADD MESSAGE
+    ====================================== */
+
+    function addMessage(message, sender) {
+
+        const row =
+            document.createElement("div");
+
+        row.classList.add(
+            "message-row"
+        );
+
+        if (sender === "user") {
+            row.classList.add("user");
+        }
+
+
+        const messageElement =
+            document.createElement("div");
+
+        messageElement.classList.add(
+            "message",
+            sender
+        );
+
+
+        const messageText =
+            document.createElement("div");
+
+        messageText.textContent =
+            message;
+
+
+        const time =
+            document.createElement("span");
+
+        time.classList.add(
+            "message-time"
+        );
+
+        time.textContent =
+            getCurrentTime();
+
+
+        messageElement.appendChild(
+            messageText
+        );
+
+        messageElement.appendChild(
+            time
+        );
+
+
+        row.appendChild(
+            messageElement
+        );
+
+        chatBox.appendChild(
+            row
+        );
+
+
+        scrollToBottom();
+    }
+
+
+    /* =====================================
+       CURRENT TIME
+    ====================================== */
+
+    function getCurrentTime() {
+
+        const now =
+            new Date();
+
+        return now.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    }
+
+
+    /* =====================================
+       SCROLL
+    ====================================== */
+
+    function scrollToBottom() {
+
+        chatBox.scrollTop =
+            chatBox.scrollHeight;
+
+    }
+
+
+    /* =====================================
+       TYPING INDICATOR
+    ====================================== */
+
+    function showTyping() {
+
+        typingRow.style.display =
+            "flex";
+
+        typingIndicator.style.display =
+            "flex";
+
+        scrollToBottom();
+
+    }
+
+
+    function hideTyping() {
+
+        typingRow.style.display =
+            "none";
+
+        typingIndicator.style.display =
+            "none";
+
+    }
+
+
+    /* =====================================
+       SEND MESSAGE
+    ====================================== */
+
+    async function sendMessage() {
+
+        const message =
+            messageInput.value.trim();
+
+
+        if (!message) {
+            return;
+        }
+
+
+        /* Show user message */
+
+        addMessage(
+            message,
+            "user"
+        );
+
+
+        /* Clear input */
+
+        messageInput.value = "";
+
+
+        /* Show typing */
+
+        showTyping();
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "http://127.0.0.1:8000/api/v1/chat",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                message: message
+                            })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            hideTyping();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail ||
+                    "Something went wrong."
+                );
+
+            }
+
+
+            addMessage(
+                data.reply,
+                "bot"
+            );
+
+
+        } catch (error) {
+
+            hideTyping();
+
+
+            addMessage(
+                "I'm having trouble connecting to the assistant right now. Please make sure the FastAPI server is running.",
+                "bot"
+            );
+
+
+            console.error(
+                "Chat error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================
+       QUICK MESSAGE
+    ====================================== */
+
+    function quickMessage(message) {
+
+        messageInput.value =
+            message;
+
+        sendMessage();
+
+    }
+
+
+    /* =====================================
+       NEW CHAT
+    ====================================== */
+
+    function resetChat() {
+
+        chatBox.innerHTML = `
+
+            <div class="date-label">
+                Today
+            </div>
+
+            <div class="message-row">
+
+                <div class="message bot">
+
+                    Welcome back! 👋
+
+                    <br><br>
+
+                    What property are you looking for today?
+
+                    <span class="message-time">
+                        Just now
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="quick-actions">
+
+                <button
+                    class="quick-button"
+                    onclick="quickMessage('I am looking for a house')"
+                >
+                    🏠 Find a house
+                </button>
+
+                <button
+                    class="quick-button"
+                    onclick="quickMessage('I am looking for an apartment')"
+                >
+                    🏢 Find an apartment
+                </button>
+
+                <button
+                    class="quick-button"
+                    onclick="quickMessage('I am looking for land')"
+                >
+                    🌍 Find land
+                </button>
+
+                <button
+                    class="quick-button"
+                    onclick="quickMessage('I want to invest in property')"
+                >
+                    📈 Property investment
+                </button>
+
+            </div>
+
+            <div
+                class="message-row"
+                id="typingRow"
+            >
+
+                <div
+                    class="typing"
+                    id="typingIndicator"
+                >
+
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+
+            </div>
+
+        `;
+
+        /* Reconnect typing elements */
+
+        window.typingRow =
+            document.getElementById(
+                "typingRow"
+            );
+
+        window.typingIndicator =
+            document.getElementById(
+                "typingIndicator"
+            );
+
+    }
+
+
+    /* =====================================
+       BUTTON CLICK
+    ====================================== */
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+
+
+    /* =====================================
+       ENTER KEY
+    ====================================== */
+
+    messageInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter"
+            ) {
+
+                event.preventDefault();
+
+                sendMessage();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================
+       INITIAL FOCUS
+    ====================================== */
+
+    messageInput.focus();
+
+</script>
+
+</body>
+</html>
+```
