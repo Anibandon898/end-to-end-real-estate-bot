@@ -1,526 +1,1034 @@
+```html
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<title>PropertyPilot AI | Smart Real Estate Assistant</title>
+    <title>PropertyPilot AI | Smart Real Estate Assistant</title>
 
-<style>
-    * {
-        box-sizing: border-box;
-    }
+    <meta
+        name="description"
+        content="PropertyPilot AI is your smart real estate assistant for finding the right property."
+    >
 
-    body {
-        margin: 0;
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: linear-gradient(135deg, #0b0b0b, #1a1a1a);
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
-
-    .chat-container {
-        width: 100%;
-        max-width: 520px;
-        height: 700px;
-        background: #f7f2e8;
-        border-radius: 22px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-    }
-
-    .header {
-        background: #0b0b0b;
-        color: white;
-        padding: 22px;
-        text-align: center;
-        border-bottom: 3px solid #d4af37;
-    }
-
-    .brand {
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-
-    .brand span {
-        color: #d4af37;
-    }
-
-    .subtitle {
-        margin-top: 5px;
-        color: #cfcfcf;
-        font-size: 13px;
-    }
-
-    .status {
-        margin-top: 10px;
-        font-size: 11px;
-        color: #8ee28e;
-    }
-
-    .chat-messages {
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .message {
-        max-width: 82%;
-        padding: 12px 15px;
-        border-radius: 16px;
-        font-size: 14px;
-        line-height: 1.5;
-        word-wrap: break-word;
-        animation: appear 0.2s ease;
-    }
-
-    @keyframes appear {
-        from {
-            opacity: 0;
-            transform: translateY(5px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .message.bot {
-        align-self: flex-start;
-        background: white;
-        color: #222;
-        border-bottom-left-radius: 4px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .message.user {
-        align-self: flex-end;
-        background: #0b0b0b;
-        color: white;
-        border-bottom-right-radius: 4px;
-    }
-
-    .typing {
-        display: none;
-        align-self: flex-start;
-        background: white;
-        color: #777;
-        padding: 10px 14px;
-        border-radius: 15px;
-        font-size: 13px;
-    }
-
-    .input-area {
-        background: white;
-        border-top: 1px solid #e5e0d6;
-        padding: 14px;
-        display: flex;
-        gap: 8px;
-    }
-
-    .input-area input {
-        flex: 1;
-        border: 1px solid #d6d0c5;
-        border-radius: 25px;
-        padding: 13px 16px;
-        font-size: 14px;
-        outline: none;
-    }
-
-    .input-area input:focus {
-        border-color: #d4af37;
-    }
-
-    .send-button {
-        border: none;
-        background: #d4af37;
-        color: #111;
-        font-weight: 700;
-        padding: 0 20px;
-        border-radius: 25px;
-        cursor: pointer;
-    }
-
-    .send-button:hover {
-        background: #c29d25;
-    }
-
-    .send-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .new-chat {
-        background: transparent;
-        border: 1px solid #d4af37;
-        color: #d4af37;
-        padding: 7px 12px;
-        border-radius: 15px;
-        cursor: pointer;
-        font-size: 11px;
-        margin-top: 10px;
-    }
-
-    .new-chat:hover {
-        background: #d4af37;
-        color: #111;
-    }
-
-    .footer {
-        text-align: center;
-        font-size: 10px;
-        color: #777;
-        padding: 7px;
-        background: #f7f2e8;
-    }
-
-    @media (max-width: 600px) {
-        body {
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
             padding: 0;
         }
 
-        .chat-container {
-            height: 100vh;
-            max-width: none;
-            border-radius: 0;
+        :root {
+            --black: #0b0b0b;
+            --black-soft: #141414;
+            --gold: #d4af37;
+            --gold-light: #f1d77a;
+            --cream: #f7f2e7;
+            --white: #ffffff;
+            --gray: #a8a8a8;
+            --border: rgba(212, 175, 55, 0.22);
+            --user: #d4af37;
+            --assistant: #181818;
         }
-    }
-</style>
-```
 
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--black);
+            color: var(--white);
+            min-height: 100vh;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ================= HEADER ================= */
+
+        header {
+            height: 74px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            background: rgba(11, 11, 11, 0.96);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            font-weight: 800;
+            font-size: 17px;
+        }
+
+        .brand-text h1 {
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .brand-text span {
+            color: var(--gold);
+        }
+
+        .brand-text p {
+            font-size: 10px;
+            color: var(--gray);
+            margin-top: 3px;
+            letter-spacing: 1.2px;
+        }
+
+        .new-chat {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .new-chat:hover {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        /* ================= HERO ================= */
+
+        .hero {
+            text-align: center;
+            padding: 45px 20px 25px;
+        }
+
+        .hero .eyebrow {
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .hero h2 {
+            font-size: clamp(28px, 5vw, 52px);
+            line-height: 1.08;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .hero h2 span {
+            color: var(--gold);
+        }
+
+        .hero p {
+            max-width: 650px;
+            margin: 15px auto 0;
+            color: var(--gray);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* ================= CHAT ================= */
+
+        .chat-wrapper {
+            width: min(900px, 94%);
+            margin: 0 auto 40px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            background: #101010;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .progress-area {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: #0e0e0e;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 5px;
+            background: #272727;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--gold);
+            transition: width 0.3s ease;
+        }
+
+        .chat-box {
+            height: 480px;
+            overflow-y: auto;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 82%;
+            padding: 13px 15px;
+            border-radius: 14px;
+            line-height: 1.5;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--assistant);
+            border: 1px solid #292929;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user);
+            color: #080808;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message .label {
+            display: block;
+            font-size: 9px;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            opacity: 0.65;
+        }
+
+        /* ================= TYPING ================= */
+
+        .typing {
+            display: none;
+            align-self: flex-start;
+            background: var(--assistant);
+            border: 1px solid #292929;
+            border-radius: 14px;
+            border-bottom-left-radius: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.2s infinite;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.45;
+            }
+
+            30% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
+
+        /* ================= QUICK BUTTONS ================= */
+
+        .quick-actions {
+            padding: 0 20px 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            border: 1px solid #343434;
+            background: #161616;
+            color: #ddd;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .quick-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* ================= INPUT ================= */
+
+        .input-area {
+            border-top: 1px solid var(--border);
+            padding: 15px;
+            background: #0d0d0d;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: #181818;
+            color: white;
+            border: 1px solid #303030;
+            border-radius: 10px;
+            padding: 13px 14px;
+            outline: none;
+            min-width: 0;
+        }
+
+        #messageInput:focus {
+            border-color: var(--gold);
+        }
+
+        #messageInput::placeholder {
+            color: #777;
+        }
+
+        #sendButton {
+            width: 52px;
+            border: none;
+            border-radius: 10px;
+            background: var(--gold);
+            color: #080808;
+            font-size: 20px;
+            font-weight: 800;
+            transition: 0.2s;
+        }
+
+        #sendButton:hover {
+            background: var(--gold-light);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .status {
+            min-height: 18px;
+            padding: 7px 3px 0;
+            font-size: 11px;
+            color: #777;
+        }
+
+        .status.error {
+            color: #ff7777;
+        }
+
+        .status.success {
+            color: #8fd18f;
+        }
+
+        /* ================= FOOTER ================= */
+
+        footer {
+            text-align: center;
+            padding: 0 20px 30px;
+            color: #666;
+            font-size: 11px;
+        }
+
+        footer span {
+            color: var(--gold);
+        }
+
+        /* ================= MOBILE ================= */
+
+        @media (max-width: 600px) {
+            header {
+                height: 68px;
+                padding: 0 16px;
+            }
+
+            .logo {
+                width: 37px;
+                height: 37px;
+                font-size: 15px;
+            }
+
+            .brand-text h1 {
+                font-size: 15px;
+            }
+
+            .brand-text p {
+                font-size: 8px;
+            }
+
+            .new-chat {
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+
+            .hero {
+                padding: 30px 17px 20px;
+            }
+
+            .hero h2 {
+                font-size: 30px;
+            }
+
+            .hero p {
+                font-size: 13px;
+            }
+
+            .chat-wrapper {
+                width: 96%;
+                border-radius: 14px;
+                margin-bottom: 25px;
+            }
+
+            .chat-box {
+                height: 54vh;
+                min-height: 380px;
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 13px;
+            }
+
+            .quick-actions {
+                padding: 0 12px 12px;
+            }
+
+            .quick-btn {
+                font-size: 11px;
+            }
+
+            .input-area {
+                padding: 10px;
+            }
+
+            #messageInput {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            #sendButton {
+                width: 47px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="chat-container">
+<div class="app">
 
-```
-<div class="header">
-    <div class="brand">
-        Property<span>Pilot</span> AI
-    </div>
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <div class="logo">P</div>
 
-    <div class="subtitle">
-        Your next property starts with a conversation.
-    </div>
+            <div class="brand-text">
+                <h1>Property<span>Pilot</span> AI</h1>
+                <p>SMART REAL ESTATE ASSISTANT</p>
+            </div>
+        </div>
 
-    <div class="status">
-        ● AI Assistant Online
-    </div>
+        <button class="new-chat" id="newChatButton">
+            + New Chat
+        </button>
+    </header>
 
-    <button class="new-chat" onclick="startNewChat()">
-        + New Conversation
-    </button>
-</div>
+    <!-- HERO -->
+    <section class="hero">
+        <div class="eyebrow">PROPERTY DISCOVERY, SIMPLIFIED</div>
 
-<div id="chatMessages" class="chat-messages">
+        <h2>
+            Your next property starts
+            <span>with a conversation.</span>
+        </h2>
 
-    <div class="message bot">
-        Welcome! I'm your PropertyPilot AI real estate assistant.
-        I can help you find the right property and understand your requirements.
-    </div>
+        <p>
+            Tell PropertyPilot what you are looking for and our smart
+            real estate assistant will guide you through the process.
+        </p>
+    </section>
 
-    <div class="message bot">
-        May I have your name?
-    </div>
+    <!-- CHAT -->
+    <main class="chat-wrapper">
 
-    <div id="typing" class="typing">
-        PropertyPilot is typing...
-    </div>
+        <!-- PROGRESS -->
+        <div class="progress-area">
+            <div class="progress-info">
+                <span>Lead profile progress</span>
+                <span id="progressText">0 / 8</span>
+            </div>
 
-</div>
+            <div class="progress-bar">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+        </div>
 
-<div class="input-area">
+        <!-- MESSAGES -->
+        <div class="chat-box" id="chatBox">
 
-    <input
-        type="text"
-        id="userInput"
-        placeholder="Type your answer..."
-        autocomplete="off"
-    >
+            <div class="message assistant">
+                <span class="label">PROPERTY PILOT AI</span>
 
-    <button
-        id="sendBtn"
-        class="send-button"
-        onclick="sendMessage()"
-    >
-        Send
-    </button>
+                Welcome! I'm your PropertyPilot real estate assistant.
+                I'll ask you a few simple questions so I can understand
+                exactly what you're looking for.
+            </div>
 
-</div>
+        </div>
 
-<div class="footer">
-    PropertyPilot AI • Smart Real Estate Assistant
-</div>
-```
+        <!-- TYPING -->
+        <div
+            class="typing"
+            id="typingRow"
+            style="margin: 0 22px 15px;"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+
+            <button
+                class="quick-btn"
+                data-message="I want to buy"
+            >
+                Buy
+            </button>
+
+            <button
+                class="quick-btn"
+                data-message="I want to rent"
+            >
+                Rent
+            </button>
+
+            <button
+                class="quick-btn"
+                data-message="I want to invest"
+            >
+                Invest
+            </button>
+
+            <button
+                class="quick-btn"
+                data-message="House"
+            >
+                House
+            </button>
+
+            <button
+                class="quick-btn"
+                data-message="Apartment"
+            >
+                Apartment
+            </button>
+
+            <button
+                class="quick-btn"
+                data-message="Land"
+            >
+                Land
+            </button>
+
+        </div>
+
+        <!-- INPUT -->
+        <div class="input-area">
+
+            <div class="input-row">
+
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Type your message..."
+                    autocomplete="off"
+                >
+
+                <button
+                    id="sendButton"
+                    aria-label="Send message"
+                >
+                    ➤
+                </button>
+
+            </div>
+
+            <div
+                class="status"
+                id="status"
+            ></div>
+
+        </div>
+
+    </main>
+
+    <footer>
+        Powered by <span>PropertyPilot AI</span>
+    </footer>
 
 </div>
 
 <script>
+    /* =====================================================
+       PROPERTY PILOT AI
+       PRODUCTION API CONFIGURATION
+       ===================================================== */
 
-    // --------------------------------------------------
-    // FASTAPI BACKEND
-    // --------------------------------------------------
+    const API_URL =
+        "https://propertypilot-ai-5yai.onrender.com/api/v1/chat";
 
-    const API_URL = "http://127.0.0.1:8000/api/v1/chat";
+    const SESSION_KEY =
+        "propertypilot_session";
 
-    const SESSION_KEY = "propertypilot_session";
-
-    let sessionId = localStorage.getItem(SESSION_KEY);
-
-
-    // --------------------------------------------------
-    // ELEMENTS
-    // --------------------------------------------------
-
-    const chatMessages = document.getElementById("chatMessages");
-    const userInput = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const typing = document.getElementById("typing");
+    const TOTAL_FIELDS = 8;
 
 
-    // --------------------------------------------------
-    // CREATE SESSION
-    // --------------------------------------------------
+    /* =====================================================
+       ELEMENTS
+       ===================================================== */
 
-    function createSession() {
+    const chatBox =
+        document.getElementById("chatBox");
 
-        return "propertypilot-" +
-            Date.now() +
+    const messageInput =
+        document.getElementById("messageInput");
+
+    const sendButton =
+        document.getElementById("sendButton");
+
+    const newChatButton =
+        document.getElementById("newChatButton");
+
+    const progressFill =
+        document.getElementById("progressFill");
+
+    const progressText =
+        document.getElementById("progressText");
+
+    const statusElement =
+        document.getElementById("status");
+
+    let typingRow =
+        document.getElementById("typingRow");
+
+
+    /* =====================================================
+       SESSION
+       ===================================================== */
+
+    function createSessionId() {
+        return (
+            "pp-" +
+            Date.now().toString() +
             "-" +
-            Math.random().toString(36).substring(2, 9);
+            Math.random()
+                .toString(36)
+                .substring(2, 10)
+        );
     }
 
 
-    // --------------------------------------------------
-    // INITIALIZE
-    // --------------------------------------------------
+    function getSessionId() {
 
-    function initializeChat() {
+        let sessionId =
+            localStorage.getItem(SESSION_KEY);
 
         if (!sessionId) {
 
-            sessionId = createSession();
+            sessionId =
+                createSessionId();
 
             localStorage.setItem(
                 SESSION_KEY,
                 sessionId
             );
-
         }
 
-        userInput.focus();
+        return sessionId;
     }
 
 
-    // --------------------------------------------------
-    // ADD MESSAGE
-    // --------------------------------------------------
+    let sessionId =
+        getSessionId();
 
-    function appendMessage(text, sender) {
 
-        const message = document.createElement("div");
+    /* =====================================================
+       UI HELPERS
+       ===================================================== */
 
-        message.className = "message " + sender;
+    function scrollToBottom() {
 
-        message.textContent = text;
-
-        chatMessages.insertBefore(
-            message,
-            typing
-        );
-
-        chatMessages.scrollTop =
-            chatMessages.scrollHeight;
+        chatBox.scrollTop =
+            chatBox.scrollHeight;
     }
 
 
-    // --------------------------------------------------
-    // TYPING INDICATOR
-    // --------------------------------------------------
+    function addMessage(
+        text,
+        type = "assistant"
+    ) {
+
+        const message =
+            document.createElement("div");
+
+        message.className =
+            "message " + type;
+
+        const label =
+            type === "user"
+                ? "YOU"
+                : "PROPERTY PILOT AI";
+
+        message.innerHTML =
+            `
+            <span class="label">
+                ${label}
+            </span>
+            ${escapeHtml(text)}
+            `;
+
+        chatBox.appendChild(message);
+
+        scrollToBottom();
+    }
+
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent =
+            value;
+
+        return div.innerHTML;
+    }
+
 
     function showTyping() {
 
-        typing.style.display = "block";
+        typingRow.style.display =
+            "block";
 
-        chatMessages.scrollTop =
-            chatMessages.scrollHeight;
+        scrollToBottom();
     }
 
 
     function hideTyping() {
 
-        typing.style.display = "none";
+        typingRow.style.display =
+            "none";
     }
 
 
-    // --------------------------------------------------
-    // SEND MESSAGE
-    // --------------------------------------------------
+    function setStatus(
+        message = "",
+        type = ""
+    ) {
 
-    async function sendMessage() {
+        statusElement.textContent =
+            message;
 
-        const message = userInput.value.trim();
+        statusElement.className =
+            "status " + type;
+    }
+
+
+    function updateProgress(
+        completedCount
+    ) {
+
+        const safeCount =
+            Math.max(
+                0,
+                Math.min(
+                    TOTAL_FIELDS,
+                    Number(completedCount) || 0
+                )
+            );
+
+        const percentage =
+            (safeCount / TOTAL_FIELDS) * 100;
+
+        progressFill.style.width =
+            percentage + "%";
+
+        progressText.textContent =
+            safeCount + " / " + TOTAL_FIELDS;
+    }
+
+
+    /* =====================================================
+       SEND MESSAGE
+       ===================================================== */
+
+    async function sendMessage(
+        messageOverride = null
+    ) {
+
+        const message =
+            (
+                messageOverride !== null
+                    ? messageOverride
+                    : messageInput.value
+            ).trim();
 
         if (!message) {
             return;
         }
 
-        if (!sessionId) {
-
-            sessionId = createSession();
-
-            localStorage.setItem(
-                SESSION_KEY,
-                sessionId
-            );
-        }
-
-
-        // Show user message
-        appendMessage(
+        addMessage(
             message,
             "user"
         );
 
+        messageInput.value = "";
 
-        // Clear input
-        userInput.value = "";
+        sendButton.disabled = true;
 
+        setStatus(
+            "Connecting to PropertyPilot..."
+        );
 
-        // Disable button
-        sendBtn.disabled = true;
-
-
-        // Show typing
         showTyping();
-
 
         try {
 
-            const response = await fetch(
-                API_URL,
-                {
-                    method: "POST",
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
 
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        message: message
-                    })
-                }
-            );
+                        body: JSON.stringify({
+
+                            session_id:
+                                sessionId,
+
+                            message:
+                                message
+
+                        })
+                    }
+                );
 
 
-            const data = await response.json();
+            let data = null;
 
+            try {
 
-            hideTyping();
+                data =
+                    await response.json();
+
+            } catch (jsonError) {
+
+                throw new Error(
+                    "The server returned an invalid response."
+                );
+            }
 
 
             if (!response.ok) {
 
                 throw new Error(
-                    data.detail ||
-                    "Server returned an error."
+                    data?.detail ||
+                    data?.message ||
+                    "The assistant could not process your message."
                 );
             }
 
 
-            if (data.success) {
+            /*
+             * Keep the session returned by
+             * the backend if one is provided.
+             */
 
-                appendMessage(
+            if (
+                data.session_id &&
+                data.session_id !== sessionId
+            ) {
+
+                sessionId =
+                    data.session_id;
+
+                localStorage.setItem(
+                    SESSION_KEY,
+                    sessionId
+                );
+            }
+
+
+            hideTyping();
+
+
+            /*
+             * Display assistant response.
+             */
+
+            if (data.reply) {
+
+                addMessage(
                     data.reply,
-                    "bot"
+                    "assistant"
                 );
+            }
 
 
-                // Log useful information
-                console.log(
-                    "Lead quality:",
-                    data.lead_quality
+            /*
+             * Calculate progress.
+             */
+
+            let completedCount = 0;
+
+            if (
+                data.collected_data &&
+                typeof data.collected_data === "object"
+            ) {
+
+                const fields = [
+                    "name",
+                    "email",
+                    "phone",
+                    "purpose",
+                    "location",
+                    "property_type",
+                    "budget",
+                    "timeline"
+                ];
+
+                completedCount =
+                    fields.filter(
+                        field => {
+
+                            const value =
+                                data.collected_data[field];
+
+                            return (
+                                value !== null &&
+                                value !== undefined &&
+                                String(value).trim() !== ""
+                            );
+                        }
+                    ).length;
+            }
+
+
+            updateProgress(
+                completedCount
+            );
+
+
+            if (data.completed === true) {
+
+                setStatus(
+                    "Lead profile completed successfully.",
+                    "success"
                 );
-
-                console.log(
-                    "Missing field:",
-                    data.missing_field
-                );
-
-                console.log(
-                    "Collected data:",
-                    data.collected_data
-                );
-
-
-                // Final lead notification
-                if (data.completed) {
-
-                    appendMessage(
-                        "Your request has been successfully received. Our property team will contact you shortly.",
-                        "bot"
-                    );
-
-                }
 
             } else {
 
-                appendMessage(
-                    data.error ||
-                    "Sorry, I could not process that message.",
-                    "bot"
+                setStatus(
+                    ""
                 );
             }
 
 
         } catch (error) {
 
+            hideTyping();
+
             console.error(
-                "PropertyPilot connection error:",
+                "PropertyPilot API error:",
                 error
             );
 
 
-            hideTyping();
+            addMessage(
+                "I'm having trouble connecting to the assistant right now. Please check your internet connection and try again.",
+                "assistant"
+            );
 
 
-            appendMessage(
-                "I'm having trouble connecting to the PropertyPilot server. Please make sure FastAPI is running.",
-                "bot"
+            setStatus(
+                "Connection problem. Please try again.",
+                "error"
             );
 
         } finally {
 
-            sendBtn.disabled = false;
+            sendButton.disabled =
+                false;
 
-            userInput.focus();
-
+            messageInput.focus();
         }
-
     }
 
 
-    // --------------------------------------------------
-    // NEW CONVERSATION
-    // --------------------------------------------------
+    /* =====================================================
+       NEW CHAT
+       ===================================================== */
 
-    function startNewChat() {
+    function resetChat() {
 
-        sessionId = createSession();
+        sessionId =
+            createSessionId();
 
         localStorage.setItem(
             SESSION_KEY,
@@ -528,64 +1036,151 @@
         );
 
 
-        chatMessages.innerHTML = "";
+        chatBox.innerHTML =
+            `
+            <div class="message assistant">
+                <span class="label">
+                    PROPERTY PILOT AI
+                </span>
+
+                Welcome! I'm your PropertyPilot real estate assistant.
+                I'll ask you a few simple questions so I can understand
+                exactly what you're looking for.
+            </div>
+            `;
 
 
-        const welcome = document.createElement("div");
+        /*
+         * Reconnect typing indicator reference
+         * because the chat contents were rebuilt.
+         */
 
-        welcome.className = "message bot";
+        const existingTyping =
+            document.getElementById(
+                "typingRow"
+            );
 
-        welcome.textContent =
-            "Welcome! I'm your PropertyPilot AI real estate assistant. May I have your name?";
+        if (existingTyping) {
+
+            typingRow =
+                existingTyping;
+
+        } else {
+
+            typingRow =
+                document.createElement("div");
+
+            typingRow.id =
+                "typingRow";
+
+            typingRow.className =
+                "typing";
+
+            typingRow.style.margin =
+                "0 22px 15px";
+
+            typingRow.innerHTML =
+                `
+                <span></span>
+                <span></span>
+                <span></span>
+                `;
+
+            chatBox.parentNode.insertBefore(
+                typingRow,
+                chatBox.nextSibling
+            );
+        }
 
 
-        chatMessages.appendChild(
-            welcome
-        );
+        hideTyping();
 
+        updateProgress(0);
 
-        chatMessages.appendChild(
-            typing
-        );
+        setStatus("");
 
+        messageInput.value = "";
 
-        userInput.value = "";
+        messageInput.focus();
 
-        userInput.focus();
-
+        scrollToBottom();
     }
 
 
-    // --------------------------------------------------
-    // ENTER KEY
-    // --------------------------------------------------
+    /* =====================================================
+       EVENT LISTENERS
+       ===================================================== */
 
-    userInput.addEventListener(
+    sendButton.addEventListener(
+        "click",
+        function () {
+            sendMessage();
+        }
+    );
+
+
+    messageInput.addEventListener(
         "keydown",
-        function(event) {
+        function (event) {
 
             if (
                 event.key === "Enter" &&
-                !sendBtn.disabled
+                !event.shiftKey
             ) {
 
                 event.preventDefault();
 
                 sendMessage();
-
             }
-
         }
     );
 
 
-    // --------------------------------------------------
-    // START
-    // --------------------------------------------------
+    newChatButton.addEventListener(
+        "click",
+        function () {
 
-    initializeChat();
+            if (
+                confirm(
+                    "Start a new conversation?"
+                )
+            ) {
+
+                resetChat();
+            }
+        }
+    );
+
+
+    document
+        .querySelectorAll(".quick-btn")
+        .forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const message =
+                            button.dataset.message;
+
+                        sendMessage(message);
+                    }
+                );
+            }
+        );
+
+
+    /* =====================================================
+       INITIALIZATION
+       ===================================================== */
+
+    updateProgress(0);
+
+    messageInput.focus();
 
 </script>
 
 </body>
 </html>
+```
