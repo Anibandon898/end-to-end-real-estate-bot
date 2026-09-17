@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -234,6 +233,35 @@
             opacity: 0.65;
         }
 
+        /* ================= IMAGE MESSAGE ================= */
+
+        .message-image {
+            display: block;
+            max-width: 260px;
+            max-height: 220px;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 5px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .image-message-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .image-message-grid img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
         /* ================= TYPING ================= */
 
         .typing {
@@ -310,7 +338,8 @@
 
         .input-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            align-items: center;
         }
 
         #messageInput {
@@ -332,8 +361,43 @@
             color: #777;
         }
 
+        /* ================= UPLOAD BUTTON ================= */
+
+        #uploadButton {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            border: 1px solid #343434;
+            border-radius: 10px;
+            background: #181818;
+            color: var(--gold);
+            font-size: 21px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        #uploadButton:hover {
+            border-color: var(--gold);
+            background: #222;
+        }
+
+        #uploadButton:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        /* ================= SEND ================= */
+
         #sendButton {
             width: 52px;
+            height: 48px;
+            flex-shrink: 0;
             border: none;
             border-radius: 10px;
             background: var(--gold);
@@ -351,6 +415,69 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
+
+        /* ================= IMAGE PREVIEW ================= */
+
+        .image-preview-area {
+            display: none;
+            padding: 10px 0 2px;
+        }
+
+        .image-preview-title {
+            font-size: 10px;
+            color: var(--gray);
+            margin-bottom: 8px;
+            letter-spacing: 0.8px;
+        }
+
+        .image-preview-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 76px;
+            height: 76px;
+            flex: 0 0 76px;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 9px;
+            border: 1px solid #343434;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 21px;
+            height: 21px;
+            border: 1px solid #111;
+            border-radius: 50%;
+            background: #111;
+            color: white;
+            font-size: 12px;
+            line-height: 18px;
+            padding: 0;
+        }
+
+        .preview-remove:hover {
+            background: #d44;
+        }
+
+        .upload-status {
+            font-size: 11px;
+            color: #777;
+            padding-top: 5px;
+        }
+
+        /* ================= STATUS ================= */
 
         .status {
             min-height: 18px;
@@ -383,6 +510,7 @@
         /* ================= MOBILE ================= */
 
         @media (max-width: 600px) {
+
             header {
                 height: 68px;
                 padding: 0 16px;
@@ -453,8 +581,20 @@
                 font-size: 14px;
             }
 
+            #uploadButton {
+                width: 45px;
+                height: 45px;
+            }
+
             #sendButton {
                 width: 47px;
+                height: 45px;
+            }
+
+            .preview-item {
+                width: 65px;
+                height: 65px;
+                flex-basis: 65px;
             }
         }
     </style>
@@ -465,24 +605,46 @@
 <div class="app">
 
     <!-- HEADER -->
+
     <header>
+
         <div class="brand">
-            <div class="logo">P</div>
+
+            <div class="logo">
+                P
+            </div>
 
             <div class="brand-text">
-                <h1>Property<span>Pilot</span> AI</h1>
-                <p>SMART REAL ESTATE ASSISTANT</p>
+
+                <h1>
+                    Property<span>Pilot</span> AI
+                </h1>
+
+                <p>
+                    SMART REAL ESTATE ASSISTANT
+                </p>
+
             </div>
+
         </div>
 
-        <button class="new-chat" id="newChatButton">
+        <button
+            class="new-chat"
+            id="newChatButton"
+        >
             + New Chat
         </button>
+
     </header>
 
+
     <!-- HERO -->
+
     <section class="hero">
-        <div class="eyebrow">PROPERTY DISCOVERY, SIMPLIFIED</div>
+
+        <div class="eyebrow">
+            PROPERTY DISCOVERY, SIMPLIFIED
+        </div>
 
         <h2>
             Your next property starts
@@ -493,51 +655,81 @@
             Tell PropertyPilot what you are looking for and our smart
             real estate assistant will guide you through the process.
         </p>
+
     </section>
 
+
     <!-- CHAT -->
+
     <main class="chat-wrapper">
 
         <!-- PROGRESS -->
+
         <div class="progress-area">
+
             <div class="progress-info">
-                <span>Lead profile progress</span>
-                <span id="progressText">0 / 8</span>
+
+                <span>
+                    Lead profile progress
+                </span>
+
+                <span id="progressText">
+                    0 / 8
+                </span>
+
             </div>
 
             <div class="progress-bar">
+
                 <div
                     class="progress-fill"
                     id="progressFill"
                 ></div>
+
             </div>
+
         </div>
 
+
         <!-- MESSAGES -->
-        <div class="chat-box" id="chatBox">
+
+        <div
+            class="chat-box"
+            id="chatBox"
+        >
 
             <div class="message assistant">
-                <span class="label">PROPERTY PILOT AI</span>
+
+                <span class="label">
+                    PROPERTY PILOT AI
+                </span>
 
                 Welcome! I'm your PropertyPilot real estate assistant.
                 I'll ask you a few simple questions so I can understand
                 exactly what you're looking for.
+
             </div>
 
         </div>
 
+
         <!-- TYPING -->
+
         <div
             class="typing"
             id="typingRow"
             style="margin: 0 22px 15px;"
         >
+
             <span></span>
             <span></span>
             <span></span>
+
         </div>
 
+
         <!-- QUICK ACTIONS -->
+
         <div class="quick-actions">
 
             <button
@@ -584,10 +776,60 @@
 
         </div>
 
-        <!-- INPUT -->
+
+        <!-- INPUT AREA -->
+
         <div class="input-area">
 
+            <!-- IMAGE PREVIEW -->
+
+            <div
+                class="image-preview-area"
+                id="imagePreviewArea"
+            >
+
+                <div class="image-preview-title">
+                    PROPERTY IMAGES
+                </div>
+
+                <div
+                    class="image-preview-list"
+                    id="imagePreviewList"
+                ></div>
+
+                <div
+                    class="upload-status"
+                    id="uploadStatus"
+                ></div>
+
+            </div>
+
+
             <div class="input-row">
+
+                <!-- HIDDEN FILE INPUT -->
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                >
+
+
+                <!-- UPLOAD BUTTON -->
+
+                <button
+                    type="button"
+                    id="uploadButton"
+                    aria-label="Upload property images"
+                    title="Upload property images"
+                >
+                    📎
+                </button>
+
+
+                <!-- MESSAGE INPUT -->
 
                 <input
                     type="text"
@@ -596,7 +838,11 @@
                     autocomplete="off"
                 >
 
+
+                <!-- SEND BUTTON -->
+
                 <button
+                    type="button"
                     id="sendButton"
                     aria-label="Send message"
                 >
@@ -604,6 +850,7 @@
                 </button>
 
             </div>
+
 
             <div
                 class="status"
@@ -614,25 +861,41 @@
 
     </main>
 
+
     <footer>
         Powered by <span>PropertyPilot AI</span>
     </footer>
 
 </div>
 
+
 <script>
+
     /* =====================================================
        PROPERTY PILOT AI
        PRODUCTION API CONFIGURATION
        ===================================================== */
 
-    const API_URL =
-        "https://propertypilot-ai-5yai.onrender.com/api/v1/chat";
+    const API_BASE_URL =
+        "https://propertypilot-ai-5yai.onrender.com";
+
+    const CHAT_API_URL =
+        API_BASE_URL +
+        "/api/v1/chat";
+
+    const UPLOAD_API_URL =
+        API_BASE_URL +
+        "/api/v1/upload";
 
     const SESSION_KEY =
         "propertypilot_session";
 
     const TOTAL_FIELDS = 8;
+
+    const MAX_IMAGES = 10;
+
+    const MAX_IMAGE_SIZE =
+        10 * 1024 * 1024;
 
 
     /* =====================================================
@@ -640,28 +903,79 @@
        ===================================================== */
 
     const chatBox =
-        document.getElementById("chatBox");
+        document.getElementById(
+            "chatBox"
+        );
 
     const messageInput =
-        document.getElementById("messageInput");
+        document.getElementById(
+            "messageInput"
+        );
 
     const sendButton =
-        document.getElementById("sendButton");
+        document.getElementById(
+            "sendButton"
+        );
 
     const newChatButton =
-        document.getElementById("newChatButton");
+        document.getElementById(
+            "newChatButton"
+        );
 
     const progressFill =
-        document.getElementById("progressFill");
+        document.getElementById(
+            "progressFill"
+        );
 
     const progressText =
-        document.getElementById("progressText");
+        document.getElementById(
+            "progressText"
+        );
 
     const statusElement =
-        document.getElementById("status");
+        document.getElementById(
+            "status"
+        );
+
+    const uploadButton =
+        document.getElementById(
+            "uploadButton"
+        );
+
+    const imageInput =
+        document.getElementById(
+            "imageInput"
+        );
+
+    const imagePreviewArea =
+        document.getElementById(
+            "imagePreviewArea"
+        );
+
+    const imagePreviewList =
+        document.getElementById(
+            "imagePreviewList"
+        );
+
+    const uploadStatus =
+        document.getElementById(
+            "uploadStatus"
+        );
+
 
     let typingRow =
-        document.getElementById("typingRow");
+        document.getElementById(
+            "typingRow"
+        );
+
+
+    /* =====================================================
+       IMAGE STATE
+       ===================================================== */
+
+    let selectedImages = [];
+
+    let uploadedImages = [];
 
 
     /* =====================================================
@@ -669,6 +983,7 @@
        ===================================================== */
 
     function createSessionId() {
+
         return (
             "pp-" +
             Date.now().toString() +
@@ -677,13 +992,16 @@
                 .toString(36)
                 .substring(2, 10)
         );
+
     }
 
 
     function getSessionId() {
 
         let sessionId =
-            localStorage.getItem(SESSION_KEY);
+            localStorage.getItem(
+                SESSION_KEY
+            );
 
         if (!sessionId) {
 
@@ -694,9 +1012,11 @@
                 SESSION_KEY,
                 sessionId
             );
+
         }
 
         return sessionId;
+
     }
 
 
@@ -712,6 +1032,7 @@
 
         chatBox.scrollTop =
             chatBox.scrollHeight;
+
     }
 
 
@@ -721,7 +1042,9 @@
     ) {
 
         const message =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         message.className =
             "message " + type;
@@ -739,21 +1062,107 @@
             ${escapeHtml(text)}
             `;
 
-        chatBox.appendChild(message);
+        chatBox.appendChild(
+            message
+        );
 
         scrollToBottom();
+
+    }
+
+
+    function addImageMessage(
+        images
+    ) {
+
+        if (!images || !images.length) {
+            return;
+        }
+
+        const message =
+            document.createElement(
+                "div"
+            );
+
+        message.className =
+            "message user";
+
+        const label =
+            document.createElement(
+                "span"
+            );
+
+        label.className =
+            "label";
+
+        label.textContent =
+            "YOU";
+
+        message.appendChild(
+            label
+        );
+
+
+        const grid =
+            document.createElement(
+                "div"
+            );
+
+        grid.className =
+            "image-message-grid";
+
+
+        images.forEach(
+            function (image) {
+
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+                img.src =
+                    image.url;
+
+                img.alt =
+                    image.filename ||
+                    "Property image";
+
+                img.loading =
+                    "lazy";
+
+                grid.appendChild(
+                    img
+                );
+
+            }
+        );
+
+
+        message.appendChild(
+            grid
+        );
+
+        chatBox.appendChild(
+            message
+        );
+
+        scrollToBottom();
+
     }
 
 
     function escapeHtml(value) {
 
         const div =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         div.textContent =
             value;
 
         return div.innerHTML;
+
     }
 
 
@@ -763,6 +1172,7 @@
             "block";
 
         scrollToBottom();
+
     }
 
 
@@ -770,6 +1180,7 @@
 
         typingRow.style.display =
             "none";
+
     }
 
 
@@ -783,6 +1194,7 @@
 
         statusElement.className =
             "status " + type;
+
     }
 
 
@@ -795,18 +1207,432 @@
                 0,
                 Math.min(
                     TOTAL_FIELDS,
-                    Number(completedCount) || 0
+                    Number(
+                        completedCount
+                    ) || 0
                 )
             );
 
         const percentage =
-            (safeCount / TOTAL_FIELDS) * 100;
+            (
+                safeCount /
+                TOTAL_FIELDS
+            ) * 100;
 
         progressFill.style.width =
             percentage + "%";
 
         progressText.textContent =
-            safeCount + " / " + TOTAL_FIELDS;
+            safeCount +
+            " / " +
+            TOTAL_FIELDS;
+
+    }
+
+
+    /* =====================================================
+       IMAGE PREVIEW
+       ===================================================== */
+
+    function renderImagePreviews() {
+
+        imagePreviewList.innerHTML =
+            "";
+
+        if (
+            selectedImages.length === 0
+        ) {
+
+            imagePreviewArea.style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        imagePreviewArea.style.display =
+            "block";
+
+
+        selectedImages.forEach(
+            function (file, index) {
+
+                const preview =
+                    document.createElement(
+                        "div"
+                    );
+
+                preview.className =
+                    "preview-item";
+
+
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+
+                const objectUrl =
+                    URL.createObjectURL(
+                        file
+                    );
+
+                img.src =
+                    objectUrl;
+
+                img.alt =
+                    file.name;
+
+
+                img.onload =
+                    function () {
+
+                        URL.revokeObjectURL(
+                            objectUrl
+                        );
+
+                    };
+
+
+                const removeButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                removeButton.type =
+                    "button";
+
+                removeButton.className =
+                    "preview-remove";
+
+                removeButton.textContent =
+                    "×";
+
+                removeButton.title =
+                    "Remove image";
+
+
+                removeButton.addEventListener(
+                    "click",
+                    function () {
+
+                        selectedImages.splice(
+                            index,
+                            1
+                        );
+
+                        renderImagePreviews();
+
+                    }
+                );
+
+
+                preview.appendChild(
+                    img
+                );
+
+                preview.appendChild(
+                    removeButton
+                );
+
+                imagePreviewList.appendChild(
+                    preview
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       IMAGE VALIDATION
+       ===================================================== */
+
+    function validateImage(
+        file
+    ) {
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+
+        if (
+            !allowedTypes.includes(
+                file.type
+            )
+        ) {
+
+            return (
+                file.name +
+                " is not supported. " +
+                "Please use JPG, PNG, or WebP."
+            );
+
+        }
+
+
+        if (
+            file.size >
+            MAX_IMAGE_SIZE
+        ) {
+
+            return (
+                file.name +
+                " is larger than 10 MB."
+            );
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* =====================================================
+       SELECT IMAGES
+       ===================================================== */
+
+    uploadButton.addEventListener(
+        "click",
+        function () {
+
+            imageInput.click();
+
+        }
+    );
+
+
+    imageInput.addEventListener(
+        "change",
+        function () {
+
+            const files =
+                Array.from(
+                    imageInput.files
+                );
+
+
+            if (!files.length) {
+                return;
+            }
+
+
+            if (
+                selectedImages.length +
+                files.length >
+                MAX_IMAGES
+            ) {
+
+                setStatus(
+                    "You can upload a maximum of " +
+                    MAX_IMAGES +
+                    " images.",
+                    "error"
+                );
+
+                imageInput.value =
+                    "";
+
+                return;
+
+            }
+
+
+            for (
+                const file
+                of files
+            ) {
+
+                const error =
+                    validateImage(
+                        file
+                    );
+
+
+                if (error) {
+
+                    setStatus(
+                        error,
+                        "error"
+                    );
+
+                    continue;
+
+                }
+
+
+                selectedImages.push(
+                    file
+                );
+
+            }
+
+
+            renderImagePreviews();
+
+            imageInput.value =
+                "";
+
+            setStatus("");
+
+        }
+    );
+
+
+    /* =====================================================
+       UPLOAD SELECTED IMAGES
+       ===================================================== */
+
+    async function uploadSelectedImages() {
+
+        if (
+            selectedImages.length === 0
+        ) {
+
+            return [];
+
+        }
+
+
+        uploadButton.disabled =
+            true;
+
+        sendButton.disabled =
+            true;
+
+
+        uploadStatus.textContent =
+            "Uploading property images...";
+
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "session_id",
+            sessionId
+        );
+
+
+        selectedImages.forEach(
+            function (file) {
+
+                formData.append(
+                    "files",
+                    file
+                );
+
+            }
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    UPLOAD_API_URL,
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            let data = null;
+
+
+            try {
+
+                data =
+                    await response.json();
+
+            } catch (error) {
+
+                throw new Error(
+                    "The upload server returned an invalid response."
+                );
+
+            }
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data?.detail ||
+                    "Image upload failed."
+                );
+
+            }
+
+
+            uploadedImages =
+                data.property_images ||
+                data.images ||
+                [];
+
+
+            selectedImages = [];
+
+
+            renderImagePreviews();
+
+
+            uploadStatus.textContent =
+                uploadedImages.length +
+                " image(s) uploaded successfully.";
+
+
+            addImageMessage(
+                uploadedImages
+            );
+
+
+            setStatus(
+                "Property images uploaded successfully.",
+                "success"
+            );
+
+
+            return uploadedImages;
+
+        } catch (error) {
+
+            console.error(
+                "Image upload error:",
+                error
+            );
+
+
+            uploadStatus.textContent =
+                "";
+
+
+            setStatus(
+                error.message ||
+                "Could not upload the images.",
+                "error"
+            );
+
+
+            return [];
+
+        } finally {
+
+            uploadButton.disabled =
+                false;
+
+            sendButton.disabled =
+                false;
+
+        }
+
     }
 
 
@@ -825,30 +1651,73 @@
                     : messageInput.value
             ).trim();
 
+
+        /*
+         * If the user selected images,
+         * upload them first.
+         */
+
+        if (
+            selectedImages.length > 0
+        ) {
+
+            const images =
+                await uploadSelectedImages();
+
+
+            /*
+             * If the user only selected
+             * images and did not type text,
+             * stop here.
+             */
+
+            if (!message) {
+
+                messageInput.focus();
+
+                return;
+
+            }
+
+        }
+
+
         if (!message) {
             return;
         }
+
 
         addMessage(
             message,
             "user"
         );
 
-        messageInput.value = "";
 
-        sendButton.disabled = true;
+        messageInput.value =
+            "";
+
+
+        sendButton.disabled =
+            true;
+
+
+        uploadButton.disabled =
+            true;
+
 
         setStatus(
             "Connecting to PropertyPilot..."
         );
 
+
         showTyping();
+
 
         try {
 
             const response =
                 await fetch(
-                    API_URL,
+                    CHAT_API_URL,
                     {
                         method: "POST",
 
@@ -857,20 +1726,23 @@
                                 "application/json"
                         },
 
-                        body: JSON.stringify({
+                        body:
+                            JSON.stringify({
 
-                            session_id:
-                                sessionId,
+                                session_id:
+                                    sessionId,
 
-                            message:
-                                message
+                                message:
+                                    message
 
-                        })
+                            })
+
                     }
                 );
 
 
             let data = null;
+
 
             try {
 
@@ -882,6 +1754,7 @@
                 throw new Error(
                     "The server returned an invalid response."
                 );
+
             }
 
 
@@ -892,12 +1765,13 @@
                     data?.message ||
                     "The assistant could not process your message."
                 );
+
             }
 
 
             /*
-             * Keep the session returned by
-             * the backend if one is provided.
+             * Keep the session returned
+             * by the backend.
              */
 
             if (
@@ -908,10 +1782,12 @@
                 sessionId =
                     data.session_id;
 
+
                 localStorage.setItem(
                     SESSION_KEY,
                     sessionId
                 );
+
             }
 
 
@@ -928,46 +1804,53 @@
                     data.reply,
                     "assistant"
                 );
+
             }
 
 
             /*
-             * Calculate progress.
+             * Update progress using
+             * the lead object returned
+             * by the current backend.
              */
 
-            let completedCount = 0;
+            let completedCount =
+                0;
 
-            if (
-                data.collected_data &&
-                typeof data.collected_data === "object"
-            ) {
 
-                const fields = [
-                    "name",
-                    "email",
-                    "phone",
-                    "purpose",
-                    "location",
-                    "property_type",
-                    "budget",
-                    "timeline"
-                ];
+            const lead =
+                data.lead ||
+                data.collected_data ||
+                {};
 
-                completedCount =
-                    fields.filter(
-                        field => {
 
-                            const value =
-                                data.collected_data[field];
+            const fields = [
+                "name",
+                "email",
+                "phone",
+                "purpose",
+                "location",
+                "property_type",
+                "budget",
+                "timeline"
+            ];
 
-                            return (
-                                value !== null &&
-                                value !== undefined &&
-                                String(value).trim() !== ""
-                            );
-                        }
-                    ).length;
-            }
+
+            completedCount =
+                fields.filter(
+                    function (field) {
+
+                        const value =
+                            lead[field];
+
+                        return (
+                            value !== null &&
+                            value !== undefined &&
+                            String(value).trim() !== ""
+                        );
+
+                    }
+                ).length;
 
 
             updateProgress(
@@ -975,7 +1858,28 @@
             );
 
 
-            if (data.completed === true) {
+            /*
+             * Keep backend-uploaded images
+             * synchronized with the frontend.
+             */
+
+            if (
+                data.lead &&
+                Array.isArray(
+                    data.lead.property_images
+                )
+            ) {
+
+                uploadedImages =
+                    data.lead.property_images;
+
+            }
+
+
+            if (
+                data.completed === true ||
+                data.missing_field === null
+            ) {
 
                 setStatus(
                     "Lead profile completed successfully.",
@@ -984,15 +1888,14 @@
 
             } else {
 
-                setStatus(
-                    ""
-                );
-            }
+                setStatus("");
 
+            }
 
         } catch (error) {
 
             hideTyping();
+
 
             console.error(
                 "PropertyPilot API error:",
@@ -1016,8 +1919,13 @@
             sendButton.disabled =
                 false;
 
+            uploadButton.disabled =
+                false;
+
             messageInput.focus();
+
         }
+
     }
 
 
@@ -1030,15 +1938,38 @@
         sessionId =
             createSessionId();
 
+
         localStorage.setItem(
             SESSION_KEY,
             sessionId
         );
 
 
+        selectedImages = [];
+
+        uploadedImages = [];
+
+
+        imageInput.value =
+            "";
+
+
+        imagePreviewList.innerHTML =
+            "";
+
+
+        imagePreviewArea.style.display =
+            "none";
+
+
+        uploadStatus.textContent =
+            "";
+
+
         chatBox.innerHTML =
             `
             <div class="message assistant">
+
                 <span class="label">
                     PROPERTY PILOT AI
                 </span>
@@ -1046,19 +1977,20 @@
                 Welcome! I'm your PropertyPilot real estate assistant.
                 I'll ask you a few simple questions so I can understand
                 exactly what you're looking for.
+
             </div>
             `;
 
 
         /*
-         * Reconnect typing indicator reference
-         * because the chat contents were rebuilt.
+         * Reconnect typing indicator.
          */
 
         const existingTyping =
             document.getElementById(
                 "typingRow"
             );
+
 
         if (existingTyping) {
 
@@ -1068,7 +2000,9 @@
         } else {
 
             typingRow =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             typingRow.id =
                 "typingRow";
@@ -1086,10 +2020,12 @@
                 <span></span>
                 `;
 
+
             chatBox.parentNode.insertBefore(
                 typingRow,
                 chatBox.nextSibling
             );
+
         }
 
 
@@ -1104,6 +2040,7 @@
         messageInput.focus();
 
         scrollToBottom();
+
     }
 
 
@@ -1114,7 +2051,9 @@
     sendButton.addEventListener(
         "click",
         function () {
+
             sendMessage();
+
         }
     );
 
@@ -1131,7 +2070,9 @@
                 event.preventDefault();
 
                 sendMessage();
+
             }
+
         }
     );
 
@@ -1147,7 +2088,9 @@
             ) {
 
                 resetChat();
+
             }
+
         }
     );
 
@@ -1164,9 +2107,13 @@
                         const message =
                             button.dataset.message;
 
-                        sendMessage(message);
+                        sendMessage(
+                            message
+                        );
+
                     }
                 );
+
             }
         );
 
@@ -1183,4 +2130,3 @@
 
 </body>
 </html>
-```

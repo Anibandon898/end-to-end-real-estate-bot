@@ -1,23 +1,43 @@
 import os
-import re
-from datetime import datetime
-from typing import Optional
-from urllib.parse import quote
+import uuid
+from typing import Optional, Dict, Any, List
 
 import requests
-from fastapi import FastAPI
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from backend.extractors import (
+    clean,
+    create_session,
+    update_lead,
+    next_missing_field,
+    calculate_lead_quality,
+    QUESTIONS,
+)
+
 
 # =========================================================
-# APP
+# ENVIRONMENT
+# =========================================================
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+load_dotenv(
+    os.path.join(PROJECT_ROOT, ".env")
+)
+
+
+# =========================================================
+# FASTAPI
 # =========================================================
 
 app = FastAPI(
     title="PropertyPilot AI",
-    version="1.0.0",
-    description="Smart Real Estate Assistant"
+    version="2.4.0"
 )
 
 
@@ -35,7 +55,7 @@ app.add_middleware(
 
 
 # =========================================================
-# CONFIG
+# CONFIGURATION
 # =========================================================
 
 N8N_WEBHOOK_URL = os.getenv(
@@ -43,17 +63,39 @@ N8N_WEBHOOK_URL = os.getenv(
     "http://localhost:5678/webhook/real-estate"
 )
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv(
+    "SUPABASE_URL",
+    ""
+)
+
+SUPABASE_KEY = os.getenv(
+    "SUPABASE_KEY",
+    ""
+)
 
 SUPABASE_TABLE = "Real estate lead"
+
+SUPABASE_STORAGE_BUCKET = os.getenv(
+    "SUPABASE_STORAGE_BUCKET",
+    "property-images"
+)
+
+MAX_IMAGE_SIZE = 10 * 1024 * 1024
+
+MAX_IMAGES = 10
+
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+}
 
 
 # =========================================================
 # SESSION STORAGE
 # =========================================================
 
-sessions = {}
+sessions: Dict[str, Dict[str, Any]] = {}
 
 
 # =========================================================
@@ -70,9 +112,11 @@ class LeadRequest(BaseModel):
     email: str = ""
     phone: str = ""
     location: str = ""
+    state: str = ""
     property_type: str = ""
     purpose: str = ""
-    budget: str = ""
+    budget: Optional[float] = None
+    budget_text: str = ""
     bedrooms: Optional[int] = None
     timeline: str = ""
     message: str = ""
@@ -83,473 +127,329 @@ class LeadRequest(BaseModel):
 
 
 # =========================================================
-# BASIC ROUTES
+# ROOT
 # =========================================================
 
 @app.get("/")
 def root():
     return {
-        "status": "online",
+        "success": True,
         "message": "PropertyPilot AI is running"
     }
 
+
+# =========================================================
+# HEALTH
+# =========================================================
 
 @app.get("/api/v1/health")
 def health():
     return {
         "status": "healthy",
-        "service": "propertypilot-ai"
+        "message": "PropertyPilot AI API is running"
     }
 
 
 # =========================================================
-# EXTRACTION
+# SUPABASE IMAGE UPLOAD
 # =========================================================
 
-def extract_email(text: str) -> str:
-    match = re.search(
-        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-        text
-    )
+def upload_image_to_supabase(
+    file: UploadFile,
+    file_bytes: bytes,
+    session_id: str
+) -> str:
 
-    return match.group(0).lower() if match else ""
+    if not SUPABASE_URL:
+        raise HTTPException(
+            status_code=500,
+            detail="SUPABASE_URL is missing"
+        )
 
+    if not SUPABASE_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="SUPABASE_KEY is missing"
+        )
 
-def extract_phone(text: str) -> str:
-    cleaned = re.sub(r"[\s().-]", "", text)
-
-    match = re.search(
-        r"(?<!\d)(?:\+234|234|0)[7-9]\d{9}(?!\d)",
-        cleaned
-    )
-
-    if not match:
-        return ""
-
-    phone = match.group(0)
-
-    if phone.startswith("234"):
-        return "+234" + phone[3:]
-
-    return phone
-
-
-def extract_name(text: str) -> str:
-    patterns = [
-        r"\bmy name is\s+([A-Za-z][A-Za-z .'-]{1,50})",
-        r"\bi'm called\s+([A-Za-z][A-Za-z .'-]{1,50})",
-        r"\bi am called\s+([A-Za-z][A-Za-z .'-]{1,50})",
-        r"\bcall me\s+([A-Za-z][A-Za-z .'-]{1,50})"
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-
-        if match:
-            name = match.group(1).strip()
-
-            name = re.split(
-                r"\b(?:and|my|phone|email|number)\b",
-                name,
-                maxsplit=1,
-                flags=re.IGNORECASE
-            )[0].strip()
-
-            if name:
-                return name.title()
-
-    return ""
-
-
-def extract_purpose(text: str) -> str:
-    text = text.lower()
-
-    if re.search(r"\b(buy|buying|purchase|purchasing|own)\b", text):
-        return "Buying"
-
-    if re.search(r"\b(rent|renting|lease|leasing)\b", text):
-        return "Renting"
-
-    if re.search(r"\b(invest|investing|investment)\b", text):
-        return "Investment"
-
-    return ""
-
-
-def extract_property_type(text: str) -> str:
-    text = text.lower()
-
-    property_types = {
-        "house": "House",
-        "home": "House",
-        "apartment": "Apartment",
-        "flat": "Flat",
-        "duplex": "Duplex",
-        "land": "Land",
-        "shop": "Shop",
-        "office": "Office",
-        "warehouse": "Warehouse",
-        "bungalow": "Bungalow",
-        "commercial": "Commercial"
+    extension_map = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp"
     }
 
-    for key, value in property_types.items():
-        if re.search(rf"\b{re.escape(key)}\b", text):
-            return value
-
-    return ""
-
-
-def extract_location(text: str) -> str:
-    locations = [
-        "Uyo",
-        "Ikot Ekpene",
-        "Eket",
-        "Oron",
-        "Akwa Ibom",
-        "Lagos",
-        "Abuja",
-        "Port Harcourt",
-        "Calabar",
-        "Ibadan",
-        "Enugu",
-        "Benin",
-        "Warri",
-        "Lekki",
-        "Ikeja",
-        "Ajah",
-        "Victoria Island"
-    ]
-
-    text_lower = text.lower()
-
-    for location in locations:
-        if location.lower() in text_lower:
-            return location
-
-    return ""
-
-
-def extract_budget(text: str) -> str:
-
-    phone = extract_phone(text)
-
-    if phone:
-        text = text.replace(phone, " ")
-
-    match = re.search(
-        r"(?:₦|ngn|n)?\s*"
-        r"([\d]+(?:[.,]\d+)?)"
-        r"\s*"
-        r"(billion|million|bn|b|m)?\b",
-        text.lower()
+    extension = extension_map.get(
+        file.content_type,
+        ""
     )
 
-    if not match:
-        return ""
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image type"
+        )
 
-    number = match.group(1).replace(",", "")
-    unit = match.group(2)
-
-    try:
-        value = float(number)
-
-        if unit in ["million", "m"]:
-            value *= 1_000_000
-
-        elif unit in ["billion", "bn", "b"]:
-            value *= 1_000_000_000
-
-        elif value < 10000:
-            return ""
-
-        return f"₦{value:,.0f}"
-
-    except ValueError:
-        return ""
-
-
-def budget_number(budget: str):
-    if not budget:
-        return None
-
-    value = re.sub(r"[^\d.]", "", budget)
-
-    if not value:
-        return None
-
-    try:
-        number = float(value)
-
-        return int(number) if number.is_integer() else number
-
-    except ValueError:
-        return None
-
-
-def extract_bedrooms(text: str) -> Optional[int]:
-    match = re.search(
-        r"\b(\d+)\s*(?:bedrooms?|beds?|br)\b",
-        text,
-        re.IGNORECASE
+    filename = (
+        uuid.uuid4().hex
+        + extension
     )
 
-    return int(match.group(1)) if match else None
+    # The bucket is already "property-images".
+    # Therefore we only need the folder/file path here.
+    storage_path = (
+        session_id
+        + "/"
+        + filename
+    )
 
+    upload_url = (
+        SUPABASE_URL.rstrip("/")
+        + "/storage/v1/object/"
+        + SUPABASE_STORAGE_BUCKET
+        + "/"
+        + storage_path
+    )
 
-def extract_timeline(text: str) -> str:
+    headers = {
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "apikey": SUPABASE_KEY,
+        "Content-Type": file.content_type,
+        "x-upsert": "false"
+    }
 
-    text_lower = text.lower().strip()
+    print("")
+    print("========== SUPABASE IMAGE UPLOAD ==========")
+    print("Bucket:", SUPABASE_STORAGE_BUCKET)
+    print("Path:", storage_path)
+    print("Filename:", file.filename)
+    print("Type:", file.content_type)
+    print("Size:", len(file_bytes))
 
-    if any(
-        phrase in text_lower
-        for phrase in [
-            "immediately",
-            "as soon as possible",
-            "right away",
-            "now",
-            "this week"
-        ]
+    try:
+        response = requests.post(
+            upload_url,
+            headers=headers,
+            data=file_bytes,
+            timeout=60
+        )
+
+    except Exception as error:
+        print(
+            "Supabase Storage connection error:",
+            repr(error)
+        )
+
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to Supabase Storage"
+        )
+
+    print(
+        "Storage status:",
+        response.status_code
+    )
+
+    print(
+        "Storage response:",
+        response.text
+    )
+
+    print("============================================")
+    print("")
+
+    if not (
+        200 <= response.status_code < 300
     ):
-        return "Immediately"
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Supabase Storage upload failed: "
+                + response.text
+            )
+        )
 
-    match = re.search(
-        r"\b(\d+)\s*"
-        r"(day|days|week|weeks|month|months|year|years)\b",
-        text_lower
+    public_url = (
+        SUPABASE_URL.rstrip("/")
+        + "/storage/v1/object/public/"
+        + SUPABASE_STORAGE_BUCKET
+        + "/"
+        + storage_path
     )
 
-    if match:
-        return f"{match.group(1)} {match.group(2)}"
-
-    return ""
+    return public_url
 
 
 # =========================================================
-# SESSION
+# PROPERTY IMAGE ENDPOINT
 # =========================================================
 
-def new_session(session_id: str):
+@app.post("/api/v1/upload")
+async def upload_property_images(
+    session_id: str = Form(...),
+    files: List[UploadFile] = File(...)
+):
+
+    session_id = clean(session_id)
+
+    if not session_id:
+        raise HTTPException(
+            status_code=400,
+            detail="session_id is required"
+        )
+
+    if not files:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one image is required"
+        )
+
+    if len(files) > MAX_IMAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "You can upload a maximum of "
+                + str(MAX_IMAGES)
+                + " images at once."
+            )
+        )
 
     if session_id not in sessions:
+        sessions[session_id] = create_session(
+            session_id
+        )
 
-        sessions[session_id] = {
-            "name": "",
-            "email": "",
-            "phone": "",
-            "location": "",
-            "property_type": "",
-            "purpose": "",
-            "budget": "",
-            "bedrooms": None,
-            "timeline": "",
-            "message": "",
-            "lead_quality": "COLD",
-            "main_problem": "",
-            "recommended_action": "",
-            "source": "real-estate-chatbot",
-            "conversation_started": datetime.utcnow().isoformat(),
-            "last_message": "",
-            "n8n_sent": False,
-            "supabase_saved": False,
-            "started": False
+    session = sessions[session_id]
+
+    if "property_images" not in session:
+        session["property_images"] = []
+
+    uploaded_images = []
+
+    for file in files:
+
+        if file.content_type not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    str(file.filename)
+                    + " is not a supported image type. "
+                    + "Use JPG, PNG, or WebP."
+                )
+            )
+
+        file_bytes = await file.read()
+
+        if len(file_bytes) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    str(file.filename)
+                    + " is empty."
+                )
+            )
+
+        if len(file_bytes) > MAX_IMAGE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    str(file.filename)
+                    + " is too large. "
+                    + "Maximum size is 10 MB per image."
+                )
+            )
+
+        public_url = upload_image_to_supabase(
+            file=file,
+            file_bytes=file_bytes,
+            session_id=session_id
+        )
+
+        image_record = {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size": len(file_bytes),
+            "url": public_url
         }
 
-    return sessions[session_id]
-
-
-# =========================================================
-# LEAD QUALITY
-# =========================================================
-
-def calculate_quality(lead):
-
-    fields = [
-        "location",
-        "property_type",
-        "purpose",
-        "budget",
-        "timeline"
-    ]
-
-    score = sum(
-        1 for field in fields
-        if lead.get(field)
-    )
-
-    if score == 5:
-        return "HOT"
-
-    if score >= 3:
-        return "WARM"
-
-    return "COLD"
-
-
-def update_quality(lead):
-
-    lead["lead_quality"] = calculate_quality(lead)
-
-    if lead["purpose"] == "Buying":
-        lead["main_problem"] = "Customer wants to buy a property."
-
-    elif lead["purpose"] == "Renting":
-        lead["main_problem"] = "Customer is looking for a property to rent."
-
-    elif lead["purpose"] == "Investment":
-        lead["main_problem"] = "Customer is interested in property investment."
-
-    else:
-        lead["main_problem"] = (
-            "Customer has not provided enough "
-            "property requirements yet."
+        uploaded_images.append(
+            image_record
         )
 
-    if lead["lead_quality"] == "HOT":
-
-        lead["recommended_action"] = (
-            "Contact immediately and provide "
-            "suitable property options."
+        session["property_images"].append(
+            image_record
         )
 
-    elif lead["lead_quality"] == "WARM":
-
-        lead["recommended_action"] = (
-            "Continue the conversation and collect "
-            "the remaining requirements."
+    return {
+        "success": True,
+        "session_id": session_id,
+        "message": (
+            str(len(uploaded_images))
+            + " property image(s) uploaded successfully."
+        ),
+        "images": uploaded_images,
+        "property_images": session.get(
+            "property_images",
+            []
         )
-
-    else:
-
-        lead["recommended_action"] = (
-            "Continue nurturing the customer and "
-            "collect more property requirements."
-        )
+    }
 
 
 # =========================================================
-# UPDATE DATA
+# SEND LEAD TO N8N
 # =========================================================
 
-def update_lead(lead, message):
+def send_to_n8n(
+    session: Dict[str, Any]
+) -> bool:
 
-    lead["last_message"] = message
-
-    email = extract_email(message)
-    phone = extract_phone(message)
-    name = extract_name(message)
-
-    purpose = extract_purpose(message)
-    location = extract_location(message)
-    property_type = extract_property_type(message)
-    budget = extract_budget(message)
-    bedrooms = extract_bedrooms(message)
-    timeline = extract_timeline(message)
-
-    if email:
-        lead["email"] = email
-
-    if phone:
-        lead["phone"] = phone
-
-    if name:
-        lead["name"] = name
-
-    if purpose:
-        lead["purpose"] = purpose
-
-    if location:
-        lead["location"] = location
-
-    if property_type:
-        lead["property_type"] = property_type
-
-    if budget:
-        lead["budget"] = budget
-
-    if bedrooms is not None:
-        lead["bedrooms"] = bedrooms
-
-    if timeline:
-        lead["timeline"] = timeline
-
-    # Store only genuine additional comments
-    if (
-        not email
-        and not phone
-        and not name
-        and not purpose
-        and not location
-        and not property_type
-        and not budget
-        and not bedrooms
-        and not timeline
-    ):
-        lead["message"] = message
-
-    update_quality(lead)
-
-
-# =========================================================
-# NEXT QUESTION
-# =========================================================
-
-def next_question(lead):
-
-    if not lead["name"]:
-        return "May I have your name?", "name"
-
-    if not lead["email"]:
-        return "What is your email address?", "email"
-
-    if not lead["phone"]:
-        return "What is the best phone number to reach you?", "phone"
-
-    if not lead["purpose"]:
-        return "Are you looking to buy, rent, or invest?", "purpose"
-
-    if not lead["location"]:
-        return "Which location or area are you interested in?", "location"
-
-    if not lead["property_type"]:
-        return "What type of property are you looking for?", "property_type"
-
-    if not lead["budget"]:
-        return "What is your budget?", "budget"
-
-    if not lead["timeline"]:
-        return "When are you planning to get the property?", "timeline"
-
-    return "", ""
-
-
-# =========================================================
-# N8N
-# =========================================================
-
-def send_to_n8n(lead):
-
-    if lead["n8n_sent"]:
-        return {
-            "sent": True,
-            "status": "already_sent"
-        }
+    if session.get("n8n_sent"):
+        return True
 
     payload = {
-        "name": lead["name"],
-        "email": lead["email"],
-        "phone": lead["phone"],
-        "location": lead["location"],
-        "property_type": lead["property_type"],
-        "purpose": lead["purpose"],
-        "budget": budget_number(lead["budget"]),
-        "bedrooms": lead["bedrooms"],
-        "timeline": lead["timeline"],
-        "message": lead["message"],
-        "lead_quality": lead["lead_quality"],
-        "main_problem": lead["main_problem"],
-        "recommended_action": lead["recommended_action"],
-        "source": "real-estate-webhook"
+        "name": session.get("name", ""),
+        "email": session.get("email", ""),
+        "phone": session.get("phone", ""),
+        "location": session.get("location", ""),
+        "state": session.get("state", ""),
+        "property_type": session.get(
+            "property_type",
+            ""
+        ),
+        "purpose": session.get(
+            "purpose",
+            ""
+        ),
+        "budget": session.get("budget"),
+        "budget_text": session.get(
+            "budget_text",
+            ""
+        ),
+        "bedrooms": session.get("bedrooms"),
+        "timeline": session.get(
+            "timeline",
+            ""
+        ),
+        "message": session.get(
+            "message",
+            ""
+        ),
+        "lead_quality": session.get(
+            "lead_quality",
+            ""
+        ),
+        "main_problem": session.get(
+            "main_problem",
+            ""
+        ),
+        "recommended_action": session.get(
+            "recommended_action",
+            ""
+        ),
+        "source": "real-estate-webhook",
+        "property_images": session.get(
+            "property_images",
+            []
+        )
     }
 
     try:
@@ -557,328 +457,403 @@ def send_to_n8n(lead):
         response = requests.post(
             N8N_WEBHOOK_URL,
             json=payload,
-            timeout=15
+            timeout=20
+        )
+
+        print(
+            "n8n response:",
+            response.status_code,
+            response.text
         )
 
         if 200 <= response.status_code < 300:
+            session["n8n_sent"] = True
+            return True
 
-            lead["n8n_sent"] = True
+        print(
+            "n8n error:",
+            response.status_code,
+            response.text
+        )
 
-            return {
-                "sent": True,
-                "status_code": response.status_code
-            }
-
-        return {
-            "sent": False,
-            "status_code": response.status_code,
-            "error": response.text[:500]
-        }
+        return False
 
     except Exception as error:
 
-        return {
-            "sent": False,
-            "error": str(error)
-        }
+        print(
+            "n8n connection error:",
+            repr(error)
+        )
+
+        return False
 
 
 # =========================================================
-# SUPABASE
+# SAVE LEAD TO SUPABASE
 # =========================================================
 
-def save_to_supabase(lead):
+def save_to_supabase(
+    session: Dict[str, Any]
+) -> bool:
 
-    if lead["supabase_saved"]:
-        return {
-            "saved": True,
-            "status": "already_saved"
-        }
+    if session.get("supabase_saved"):
+        return True
 
-    if not SUPABASE_URL or not SUPABASE_KEY:
+    if not SUPABASE_URL:
+        print(
+            "Supabase error: SUPABASE_URL is missing"
+        )
+        return False
 
-        return {
-            "saved": False,
-            "error": "Supabase environment variables are not configured"
-        }
+    if not SUPABASE_KEY:
+        print(
+            "Supabase error: SUPABASE_KEY is missing"
+        )
+        return False
 
-    table = quote(
-        SUPABASE_TABLE,
-        safe=""
+    payload = {
+        "name": session.get("name", ""),
+        "email": session.get("email", ""),
+        "phone": session.get("phone", ""),
+        "location": session.get("location", ""),
+        "property_type": session.get(
+            "property_type",
+            ""
+        ),
+        "purpose": session.get(
+            "purpose",
+            ""
+        ),
+        "budget": session.get("budget"),
+
+        # IMPORTANT:
+        # Chatbot uses "bedrooms".
+        # Supabase column is "bedroom".
+        "bedroom": session.get("bedrooms"),
+
+        "timeline": session.get(
+            "timeline",
+            ""
+        ),
+        "message": session.get(
+            "message",
+            ""
+        ),
+        "lead_quality": session.get(
+            "lead_quality",
+            ""
+        ),
+        "main_problem": session.get(
+            "main_problem",
+            ""
+        ),
+        "recommended_action": session.get(
+            "recommended_action",
+            ""
+        ),
+        "source": "real-estate-chatbot"
+    }
+
+    property_images = session.get(
+        "property_images",
+        []
     )
 
-    url = (
-        f"{SUPABASE_URL.rstrip('/')}"
-        f"/rest/v1/{table}"
+    if property_images:
+        payload["property_images"] = [
+            image.get("url")
+            for image in property_images
+            if image.get("url")
+        ]
+
+    table_url = (
+        SUPABASE_URL.rstrip("/")
+        + "/rest/v1/"
+        + SUPABASE_TABLE.replace(
+            " ",
+            "%20"
+        )
     )
 
     headers = {
         "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Authorization": (
+            "Bearer "
+            + SUPABASE_KEY
+        ),
         "Content-Type": "application/json",
-        "Prefer": "return=minimal"
+        "Prefer": "return=representation"
     }
 
-    payload = {
-        "name": lead["name"],
-        "email": lead["email"],
-        "phone": lead["phone"],
-        "location": lead["location"],
-        "property_type": lead["property_type"],
-        "purpose": lead["purpose"],
-        "budget": budget_number(lead["budget"]),
-        "timeline": lead["timeline"],
-        "message": lead["message"],
-        "lead_quality": lead["lead_quality"],
-        "main_problem": lead["main_problem"],
-        "recommended_action": lead["recommended_action"],
-        "source": "real-estate-chatbot"
-    }
-
-    if lead["bedrooms"] is not None:
-        payload["bedroom"] = lead["bedrooms"]
+    print("")
+    print("========== SUPABASE INSERT ==========")
+    print("URL:", table_url)
+    print("Payload:", payload)
 
     try:
 
         response = requests.post(
-            url,
+            table_url,
             headers=headers,
             json=payload,
-            timeout=15
+            timeout=20
         )
-
-        if 200 <= response.status_code < 300:
-
-            lead["supabase_saved"] = True
-
-            return {
-                "saved": True,
-                "status_code": response.status_code
-            }
-
-        return {
-            "saved": False,
-            "status_code": response.status_code,
-            "error": response.text[:1000]
-        }
 
     except Exception as error:
 
-        return {
-            "saved": False,
-            "error": str(error)
-        }
+        print(
+            "Supabase connection error:",
+            repr(error)
+        )
+
+        return False
+
+    print(
+        "Supabase status:",
+        response.status_code
+    )
+
+    print(
+        "Supabase response:",
+        response.text
+    )
+
+    print("======================================")
+    print("")
+
+    if 200 <= response.status_code < 300:
+        session["supabase_saved"] = True
+        return True
+
+    print(
+        "Supabase error:",
+        response.status_code,
+        response.text
+    )
+
+    return False
 
 
 # =========================================================
-# CHAT
+# CHAT ENDPOINT
 # =========================================================
 
 @app.post("/api/v1/chat")
-def chat(request: ChatRequest):
+def chat(
+    request: ChatRequest
+):
 
-    session_id = request.session_id.strip()
-    message = request.message.strip()
+    session_id = clean(
+        request.session_id
+    )
+
+    message = clean(
+        request.message
+    )
 
     if not session_id:
-        return {
-            "success": False,
-            "error": "session_id is required"
-        }
+        session_id = create_session()
 
-    if not message:
-        return {
-            "success": False,
-            "error": "message is required"
-        }
+    if session_id not in sessions:
+        sessions[session_id] = create_session(
+            session_id
+        )
 
-    lead = new_session(session_id)
+    session = sessions[session_id]
 
-    # =====================================================
-    # FIRST MESSAGE
-    # =====================================================
+    if "property_images" not in session:
+        session["property_images"] = []
 
-    if not lead["started"]:
+    if message:
 
-        lead["started"] = True
-        lead["last_message"] = message
+        session["message"] = message
 
-        # If the first message already contains a name,
-        # capture it. Otherwise ask for name.
-        name = extract_name(message)
+        update_lead(
+            session,
+            message
+        )
 
-        if name:
-            lead["name"] = name
-            update_quality(lead)
+    session["lead_quality"] = (
+        calculate_lead_quality(
+            session
+        )
+    )
 
-            reply = "What is your email address?"
-            missing_field = "email"
+    missing = next_missing_field(
+        session
+    )
 
-        else:
+    if missing is None:
 
-            reply = "Welcome! I'm your real estate assistant. May I have your name?"
-            missing_field = "name"
+        n8n_saved = send_to_n8n(
+            session
+        )
 
-        return build_response(
-            session_id,
-            lead,
-            reply,
-            missing_field,
+        supabase_saved = save_to_supabase(
+            session
+        )
+
+        reply = (
+            "Thank you! I have all the information I need. "
+            "Our property team will review your request and "
+            "contact you shortly."
+        )
+
+    else:
+
+        n8n_saved = session.get(
+            "n8n_sent",
             False
         )
 
-    # =====================================================
-    # PROCESS MESSAGE
-    # =====================================================
-
-    update_lead(
-        lead,
-        message
-    )
-
-    # =====================================================
-    # FIND NEXT QUESTION
-    # =====================================================
-
-    reply, missing_field = next_question(lead)
-
-    # =====================================================
-    # COMPLETE
-    # =====================================================
-
-    if not missing_field:
-
-        n8n_result = send_to_n8n(lead)
-
-        supabase_result = save_to_supabase(lead)
-
-        return build_response(
-            session_id,
-            lead,
-            (
-                "Thank you! I have all the information I need. "
-                "Your property request has been received successfully. "
-                "Our team will contact you shortly."
-            ),
-            "",
-            True,
-            n8n_result,
-            supabase_result
+        supabase_saved = session.get(
+            "supabase_saved",
+            False
         )
 
-    # =====================================================
-    # CONTINUE
-    # =====================================================
+        if not any(
+            session.get(field)
+            for field in [
+                "purpose",
+                "location",
+                "property_type",
+                "budget",
+                "timeline",
+                "name",
+                "phone",
+                "email"
+            ]
+        ):
 
-    return build_response(
-        session_id,
-        lead,
-        reply,
-        missing_field,
-        False
-    )
+            reply = (
+                "Welcome! I'm your real estate assistant. "
+                "Are you looking to buy, rent, or invest?"
+            )
 
+        else:
 
-# =========================================================
-# RESPONSE BUILDER
-# =========================================================
+            reply = QUESTIONS.get(
+                missing,
+                "Could you provide a little more information?"
+            )
 
-def build_response(
-    session_id,
-    lead,
-    reply,
-    missing_field,
-    completed,
-    n8n_result=None,
-    supabase_result=None
-):
+        session["last_asked"] = missing
 
-    if n8n_result is None:
-        n8n_result = {
-            "sent": lead["n8n_sent"]
-        }
-
-    if supabase_result is None:
-        supabase_result = {
-            "saved": lead["supabase_saved"]
-        }
+    lead = {
+        "name": session.get(
+            "name",
+            ""
+        ),
+        "email": session.get(
+            "email",
+            ""
+        ),
+        "phone": session.get(
+            "phone",
+            ""
+        ),
+        "location": session.get(
+            "location",
+            ""
+        ),
+        "property_type": session.get(
+            "property_type",
+            ""
+        ),
+        "purpose": session.get(
+            "purpose",
+            ""
+        ),
+        "budget": session.get(
+            "budget"
+        ),
+        "bedrooms": session.get(
+            "bedrooms"
+        ),
+        "timeline": session.get(
+            "timeline",
+            ""
+        ),
+        "lead_quality": session.get(
+            "lead_quality",
+            ""
+        ),
+        "property_images": session.get(
+            "property_images",
+            []
+        )
+    }
 
     return {
         "success": True,
         "session_id": session_id,
         "reply": reply,
-        "lead_quality": lead["lead_quality"],
-        "completed": completed,
-        "missing_field": missing_field,
-        "collected_data": {
-            "name": lead["name"],
-            "email": lead["email"],
-            "phone": lead["phone"],
-            "location": lead["location"],
-            "property_type": lead["property_type"],
-            "purpose": lead["purpose"],
-            "budget": lead["budget"],
-            "bedrooms": lead["bedrooms"],
-            "timeline": lead["timeline"],
-            "message": lead["message"],
-            "lead_quality": lead["lead_quality"],
-            "main_problem": lead["main_problem"],
-            "recommended_action": lead["recommended_action"],
-            "source": lead["source"],
-            "conversation_started": lead["conversation_started"],
-            "last_message": lead["last_message"]
-        },
+        "lead": lead,
+        "missing_field": missing,
+        "lead_quality": session.get(
+            "lead_quality",
+            ""
+        ),
         "integrations": {
-            "n8n": n8n_result,
-            "supabase": supabase_result
+            "n8n": {
+                "sent": n8n_saved
+            },
+            "supabase": {
+                "saved": supabase_saved
+            }
         }
     }
 
 
 # =========================================================
-# MANUAL LEAD
+# DIRECT LEAD ENDPOINT
 # =========================================================
 
 @app.post("/api/v1/leads")
-def create_lead(request: LeadRequest):
+def create_lead(
+    lead: LeadRequest
+):
 
-    lead = request.model_dump()
-
-    lead["n8n_sent"] = False
-    lead["supabase_saved"] = False
-
-    update_quality(lead)
-
-    n8n_result = send_to_n8n(lead)
-    supabase_result = save_to_supabase(lead)
-
-    return {
-        "success": True,
-        "message": "Lead processed successfully",
-        "lead": lead,
-        "integrations": {
-            "n8n": n8n_result,
-            "supabase": supabase_result
-        }
+    session = {
+        "name": lead.name,
+        "email": lead.email,
+        "phone": lead.phone,
+        "location": lead.location,
+        "state": lead.state,
+        "property_type": lead.property_type,
+        "purpose": lead.purpose,
+        "budget": lead.budget,
+        "budget_text": lead.budget_text,
+        "bedrooms": lead.bedrooms,
+        "timeline": lead.timeline,
+        "message": lead.message,
+        "lead_quality": lead.lead_quality,
+        "main_problem": lead.main_problem,
+        "recommended_action": lead.recommended_action,
+        "source": lead.source,
+        "property_images": [],
+        "n8n_sent": False,
+        "supabase_saved": False
     }
 
+    n8n_saved = send_to_n8n(
+        session
+    )
 
-# =========================================================
-# GET SESSION
-# =========================================================
-
-@app.get("/api/v1/sessions/{session_id}")
-def get_session(session_id: str):
-
-    if session_id not in sessions:
-
-        return {
-            "success": False,
-            "message": "Session not found"
-        }
+    supabase_saved = save_to_supabase(
+        session
+    )
 
     return {
         "success": True,
-        "session_id": session_id,
-        "lead": sessions[session_id]
+        "message": "Lead processed",
+        "lead": lead.dict(),
+        "integrations": {
+            "n8n": {
+                "sent": n8n_saved
+            },
+            "supabase": {
+                "saved": supabase_saved
+            }
+        }
     }
