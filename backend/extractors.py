@@ -571,87 +571,101 @@ def extract_bedrooms(text: str) -> Optional[int]:
 # =========================================================
 
 def extract_timeline(text: str) -> Optional[str]:
+    """Extract a property timeline from natural language."""
+    if not text:
+        return None
 
-    low = _low(text)
+    low = _low(text).strip()
 
-    if re.search(
-        r"\b(immediately|right away|asap|now)\b",
-        low
-    ):
-        return "Immediately"
+    # Immediate / urgent
+    if re.search(r'\b(immediately|right\s+away|asap|as\s+soon\s+as\s+possible|right\s+now|now)\b', low):
+        return 'Immediately'
 
-    if re.search(
-        r"\b(flexible|not sure|no rush|open timeline)\b",
-        low
-    ):
-        return "Flexible"
+    # Flexible
+    if re.search(r'\b(flexible|not\s+sure|no\s+rush|open\s+timeline|whenever)\b', low):
+        return 'Flexible'
 
-    match = re.search(
-        r"\bwithin\s+(\d+)\s+"
-        r"(day|days|week|weeks|month|months|year|years)\b",
-        low
-    )
+    # Within the month
+    if re.search(r'\bwithin\s+the\s+month\b', low):
+        return 'Within 1 month'
 
+    # This month
+    if re.search(r'\bthis\s+month\b', low):
+        return 'Within 1 month'
+
+    # Next month
+    if re.search(r'\bnext\s+month\b', low):
+        return 'Within 2 months'
+
+    # A month / one month
+    if re.search(r'\b(a|one|1)\s+month\b', low):
+        return 'Within 1 month'
+
+    # A few months
+    if re.search(r'\ba\s+few\s+months\b', low):
+        return 'Within 3 months'
+
+    # Within X days/weeks/months/years
+    match = re.search(r'\bwithin\s+(\d+)\s+(day|days|week|weeks|month|months|year|years)\b', low)
     if match:
+        number = int(match.group(1))
+        unit = match.group(2)
+        if number == 1:
+            unit = unit.rstrip('s')
+        elif unit in ('day', 'week', 'month', 'year'):
+            unit += 's'
+        return f'Within {number} {unit}'
 
-        return (
-            f"Within {match.group(1)} "
-            f"{match.group(2)}"
-        )
-
-    match = re.search(
-        r"\bin\s+(\d+)\s+"
-        r"(day|days|week|weeks|month|months|year|years)\b",
-        low
-    )
-
+    # In X days/weeks/months/years
+    match = re.search(r'\bin\s+(\d+)\s+(day|days|week|weeks|month|months|year|years)\b', low)
     if match:
+        number = int(match.group(1))
+        unit = match.group(2)
+        if number == 1:
+            unit = unit.rstrip('s')
+        elif unit in ('day', 'week', 'month', 'year'):
+            unit += 's'
+        return f'Within {number} {unit}'
 
-        return (
-            f"In {match.group(1)} "
-            f"{match.group(2)}"
-        )
-
-    if "next week" in low:
-        return "Within 1 week"
-
-    if "next month" in low:
-        return "Within 1 month"
-
-    if "next year" in low:
-        return "Within 1 year"
-
-    if "this week" in low:
-        return "This week"
-
-    if "this month" in low:
-        return "This month"
-
-    if "this year" in low:
-        return "This year"
-
-    match = re.search(
-        r"\b(q1|q2|q3|q4)\b",
-        low
-    )
-
+    # Plain X days/weeks/months/years
+    # Handles: 3 month, 3 months, 2 weeks, 5 days, etc.
+    match = re.search(r'\b(\d+)\s+(day|days|week|weeks|month|months|year|years)\b', low)
     if match:
-        return match.group(1).upper()
+        number = int(match.group(1))
+        unit = match.group(2)
+        if number == 1:
+            unit = unit.rstrip('s')
+        elif unit in ('day', 'week', 'month', 'year'):
+            unit += 's'
+        return f'Within {number} {unit}'
 
-    match = re.search(
-        r"\bby\s+(20\d{2})\b",
-        low
-    )
+    # Word numbers
+    word_numbers = {
+        'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5,
+        'six': 6,
+        'seven': 7,
+        'eight': 8,
+        'nine': 9,
+        'ten': 10,
+        'eleven': 11,
+        'twelve': 12,
+    }
 
-    if match:
-        return f"By {match.group(1)}"
+    for word, number in word_numbers.items():
+        match = re.search(rf'\b{word}\s+(day|days|week|weeks|month|months|year|years)\b', low)
+        if match:
+            unit = match.group(1)
+            if number == 1:
+                unit = unit.rstrip('s')
+            elif unit in ('day', 'week', 'month', 'year'):
+                unit += 's'
+            return f'Within {number} {unit}'
 
     return None
-
-
-# =========================================================
-# BUDGET
-# =========================================================
 
 def _convert_money(
     value: float,
@@ -678,38 +692,62 @@ def _convert_money(
 def extract_budget(
     text: str
 ) -> Tuple[Optional[float], Optional[str]]:
+    """Extract a property budget without confusing time expressions for money."""
 
     text = clean(text)
-    low = text.lower()
+    low = text.lower().strip()
+
+    # -----------------------------------------------------
+    # Ignore timeline expressions.
+    # Examples:
+    # 3 month
+    # 3 months
+    # within 3 months
+    # in 3 months
+    # 2 weeks
+    # 5 days
+    # -----------------------------------------------------
+    if re.search(
+        r'\b(?:within\s+|in\s+)?(?:\d+|a|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+'
+        r'(?:day|days|week|weeks|month|months|year|years)\b',
+        low
+    ):
+        # If the entire message is a timeline expression, it is definitely
+        # not a budget.
+        if re.fullmatch(
+            r'\s*(?:within\s+|in\s+)?(?:\d+|a|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+'
+            r'(?:day|days|week|weeks|month|months|year|years)\s*',
+            low
+        ):
+            return None, None
 
     # Flexible budget
     if re.search(
-        r"\b(flexible|open budget|negotiable)\b",
+        r'\b(flexible|open budget|negotiable)\b',
         low
     ):
-        return None, "Flexible"
+        return None, 'Flexible'
 
     # -----------------------------------------------------
     # Budget ranges
     # Example:
     # 40m - 50m
     # 40 million to 50 million
+    # ₦40m - ₦50m
     # -----------------------------------------------------
-
     range_match = re.search(
-        r"(?:₦|ngn|n)?\s*"
-        r"(\d+(?:\.\d+)?)\s*"
-        r"(million|m|billion|b|thousand|k)?"
-        r"\s*(?:-|to)\s*"
-        r"(?:₦|ngn|n)?\s*"
-        r"(\d+(?:\.\d+)?)\s*"
-        r"(million|m|billion|b|thousand|k)?",
+        r'(?:₦|ngn|n)?\s*'
+        r'(\d+(?:\.\d+)?)\s*'
+        r'(million|m|billion|b|thousand|k)?'
+        r'\s*(?:-|to)\s*'
+        r'(?:₦|ngn|n)?\s*'
+        r'(\d+(?:\.\d+)?)\s*'
+        r'(million|m|billion|b|thousand|k)?',
         low,
         re.IGNORECASE
     )
 
     if range_match:
-
         first = _convert_money(
             float(range_match.group(1)),
             range_match.group(2)
@@ -723,13 +761,11 @@ def extract_budget(
         low_value = min(first, second)
         high_value = max(first, second)
 
-        numeric_budget = (
-            low_value + high_value
-        ) / 2
+        numeric_budget = (low_value + high_value) / 2
 
         text_value = (
-            f"₦{low_value:,.0f} - "
-            f"₦{high_value:,.0f}"
+            f'₦{low_value:,.0f} - '
+            f'₦{high_value:,.0f}'
         )
 
         return numeric_budget, text_value
@@ -737,36 +773,48 @@ def extract_budget(
     # -----------------------------------------------------
     # Single budget
     # -----------------------------------------------------
-
     match = re.search(
-        r"(?:₦|ngn|n)?\s*"
-        r"(\d+(?:\.\d+)?)\s*"
-        r"(million|m|billion|b|thousand|k)?",
+        r'(?:₦|ngn|n)\s*'
+        r'(\d+(?:\.\d+)?)\s*'
+        r'(million|m|billion|b|thousand|k)?',
         low,
         re.IGNORECASE
     )
 
-    if match:
+    if not match:
+        match = re.search(
+            r'\b(\d+(?:\.\d+)?)\s*'
+            r'(million|m|billion|b|thousand|k)\b',
+            low,
+            re.IGNORECASE
+        )
 
+    if match:
         value = _convert_money(
             float(match.group(1)),
             match.group(2)
         )
 
-        # Prevent numbers such as 4 bedrooms
-        # from becoming a budget.
         if value >= 100_000:
-            return value, f"₦{value:,.0f}"
+            return value, f'₦{value:,.0f}'
+
+    # -----------------------------------------------------
+    # Plain large numeric amounts.
+    # Example:
+    # 50000000
+    # 50000000 naira
+    # -----------------------------------------------------
+    match = re.search(
+        r'\b(\d{6,})\b\s*(?:naira|ngn|₦)?',
+        low,
+        re.IGNORECASE
+    )
+
+    if match:
+        value = float(match.group(1))
+        return value, f'₦{value:,.0f}'
 
     return None, None
-
-
-# =========================================================
-# BUDGET TEXT
-# =========================================================
-# This function is required by the existing main.py.
-# DO NOT REMOVE IT.
-# =========================================================
 
 def budget_text(value) -> str:
 
