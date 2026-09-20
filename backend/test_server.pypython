@@ -1,0 +1,1 @@
+    return {"status":"working"}  -m uvicorn backend.test_server:app --port 8001

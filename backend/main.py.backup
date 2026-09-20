@@ -1,0 +1,1632 @@
+import os
+import re
+import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote
+
+import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr, Field
+
+
+# =========================================================
+# LOAD ENVIRONMENT VARIABLES
+# =========================================================
+
+load_dotenv()
+
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
+
+N8N_WEBHOOK_URL = os.getenv(
+    "N8N_WEBHOOK_URL",
+    "http://localhost:5678/webhook/real-estate",
+)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+SUPABASE_TABLE = "Real estate lead"
+SUPABASE_BUCKET = "property-images"
+
+
+# =========================================================
+# FASTAPI APP
+# =========================================================
+
+app = FastAPI(
+    title="PropertyPilot AI",
+    description="Smart Real Estate Assistant API",
+    version="2.0.0",
+)
+
+
+# =========================================================
+# CORS
+# =========================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# =========================================================
+# IN-MEMORY SESSIONS
+# =========================================================
+
+sessions: Dict[str, Dict[str, Any]] = {}
+
+
+# =========================================================
+# NIGERIAN STATES + FCT
+# =========================================================
+
+NIGERIAN_STATES = [
+    "Abia",
+    "Adamawa",
+    "Akwa Ibom",
+    "Anambra",
+    "Bauchi",
+    "Bayelsa",
+    "Benue",
+    "Borno",
+    "Cross River",
+    "Delta",
+    "Ebonyi",
+    "Edo",
+    "Ekiti",
+    "Enugu",
+    "Gombe",
+    "Imo",
+    "Jigawa",
+    "Kaduna",
+    "Kano",
+    "Katsina",
+    "Kebbi",
+    "Kogi",
+    "Kwara",
+    "Lagos",
+    "Nasarawa",
+    "Niger",
+    "Ogun",
+    "Ondo",
+    "Osun",
+    "Oyo",
+    "Plateau",
+    "Rivers",
+    "Sokoto",
+    "Taraba",
+    "Yobe",
+    "Zamfara",
+    "Federal Capital Territory",
+    "FCT",
+]
+
+
+# =========================================================
+# NIGERIAN CITIES / AREAS
+# =========================================================
+
+LOCATIONS = [
+    # Akwa Ibom
+    "Uyo",
+    "Eket",
+    "Ikot Ekpene",
+    "Oron",
+
+    # Lagos
+    "Lagos",
+    "Lekki",
+    "Ikeja",
+    "Yaba",
+    "Ikoyi",
+    "Victoria Island",
+    "VI",
+    "Ajah",
+    "Surulere",
+    "Maryland",
+    "Magodo",
+    "Gbagada",
+    "Ojodu",
+    "Ogba",
+    "Alimosho",
+    "Chevron",
+    "Sangotedo",
+    "Ikorodu",
+    "Badagry",
+    "Festac",
+    "Apapa",
+    "Oshodi",
+    "Mushin",
+    "Ketu",
+    "Anthony",
+    "Banana Island",
+    "Oniru",
+    "Osapa",
+    "Chevron Drive",
+    "Epe",
+
+    # Abuja / FCT
+    "Abuja",
+    "Garki",
+    "Wuse",
+    "Maitama",
+    "Asokoro",
+    "Gwarinpa",
+    "Jabi",
+    "Katampe",
+    "Life Camp",
+    "Kubwa",
+    "Lugbe",
+    "Lokogoma",
+    "Guzape",
+    "Utako",
+    "Mabushi",
+    "Apo",
+    "Durumi",
+    "Karsana",
+    "Galadimawa",
+    "Airport Road",
+
+    # Rivers
+    "Port Harcourt",
+    "Rumuola",
+    "Rumuokoro",
+    "GRA Port Harcourt",
+    "Trans Amadi",
+    "Peter Odili",
+    "Eliozu",
+    "Woji",
+    "Old GRA",
+
+    # Cross River
+    "Calabar",
+
+    # Edo
+    "Benin City",
+    "Benin",
+
+    # Enugu
+    "Enugu",
+    "New Haven Enugu",
+    "Independence Layout",
+    "GRA Enugu",
+    "Trans Ekulu",
+
+    # Oyo
+    "Ibadan",
+    "Bodija",
+    "Jericho",
+    "Oluyole",
+    "Akobo",
+    "Ring Road Ibadan",
+
+    # Kano
+    "Kano",
+
+    # Kaduna
+    "Kaduna",
+
+    # Plateau
+    "Jos",
+
+    # Imo
+    "Owerri",
+
+    # Abia
+    "Aba",
+    "Umuahia",
+
+    # Anambra
+    "Onitsha",
+    "Awka",
+    "Nnewi",
+
+    # Delta
+    "Asaba",
+    "Warri",
+    "Sapele",
+    "Ughelli",
+
+    # Ondo
+    "Akure",
+
+    # Kwara
+    "Ilorin",
+
+    # Ogun
+    "Abeokuta",
+    "Sagamu",
+    "Ijebu Ode",
+
+    # Osun
+    "Osogbo",
+    "Ile-Ife",
+
+    # Ekiti
+    "Ado-Ekiti",
+
+    # Benue
+    "Makurdi",
+
+    # Kogi
+    "Lokoja",
+
+    # Niger
+    "Minna",
+
+    # Borno
+    "Maiduguri",
+
+    # Sokoto
+    "Sokoto",
+
+    # Bauchi
+    "Bauchi",
+
+    # Gombe
+    "Gombe",
+
+    # Adamawa
+    "Yola",
+
+    # Taraba
+    "Jalingo",
+
+    # Kebbi
+    "Birnin Kebbi",
+
+    # Zamfara
+    "Gusau",
+
+    # Yobe
+    "Damaturu",
+
+    # Nasarawa
+    "Lafia",
+
+    # Katsina
+    "Katsina",
+
+    # Jigawa
+    "Dutse",
+
+    # Bayelsa
+    "Yenagoa",
+
+    # Ebonyi
+    "Abakaliki",
+]
+
+
+# =========================================================
+# PROPERTY TYPES
+# =========================================================
+
+PROPERTY_TYPE_PATTERNS = [
+    (r"\bdetached\s+house\b", "House"),
+    (r"\bsemi[-\s]?detached\b", "House"),
+    (r"\bbungalow\b", "Bungalow"),
+    (r"\bduplex\b", "Duplex"),
+    (r"\bterrace(?:d)?\b", "Terrace"),
+    (r"\btownhouse\b", "Terrace"),
+    (r"\bapartment\b", "Apartment"),
+    (r"\bflat\b", "Apartment"),
+    (r"\bcondo(?:minium)?\b", "Apartment"),
+    (r"\bhouse\b", "House"),
+    (r"\bhome\b", "House"),
+    (r"\bland\b", "Land"),
+    (r"\bplot\b", "Land"),
+    (r"\bplots\b", "Land"),
+    (r"\bcommercial\s+property\b", "Commercial"),
+    (r"\bcommercial\b", "Commercial"),
+    (r"\boffice\b", "Office"),
+    (r"\bshop\b", "Shop"),
+    (r"\bwarehouse\b", "Warehouse"),
+    (r"\bestate\b", "Estate"),
+]
+
+
+# =========================================================
+# HELPER: NORMALIZE TEXT
+# =========================================================
+
+def normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip())
+
+
+# =========================================================
+# EXTRACT EMAIL
+# =========================================================
+
+def extract_email(text: str) -> Optional[str]:
+    match = re.search(
+        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+        text,
+        re.IGNORECASE,
+    )
+
+    if match:
+        return match.group(0).lower()
+
+    return None
+
+
+# =========================================================
+# EXTRACT PHONE
+# =========================================================
+
+def extract_phone(text: str) -> Optional[str]:
+    patterns = [
+        r"(?<!\d)(\+234[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{4})(?!\d)",
+        r"(?<!\d)(0\d{3}[\s-]?\d{3}[\s-]?\d{4})(?!\d)",
+        r"(?<!\d)(\d{11})(?!\d)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text)
+
+        if match:
+            raw = match.group(1)
+            digits = re.sub(r"\D", "", raw)
+
+            if digits.startswith("234"):
+                return "+" + digits
+
+            if digits.startswith("0"):
+                return "+234" + digits[1:]
+
+            if len(digits) == 11:
+                return "+234" + digits[1:]
+
+    return None
+
+
+# =========================================================
+# EXTRACT NAME
+# =========================================================
+
+def extract_name(text: str) -> Optional[str]:
+
+    cleaned = normalize_text(text)
+
+    patterns = [
+        r"^(?:my\s+name\s+is)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+        r"^(?:i\s+am)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+        r"^(?:i'm)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+        r"^(?:im)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+        r"^(?:call\s+me)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+        r"^(?:name)\s*[:=-]\s*([A-Za-z]+(?:\s+[A-Za-z]+){0,3})[.!]?$",
+    ]
+
+    for pattern in patterns:
+        match = re.match(pattern, cleaned, re.IGNORECASE)
+
+        if match:
+            name = normalize_text(match.group(1))
+            return " ".join(word.capitalize() for word in name.split())
+
+    # Accept simple names such as:
+    # David
+    # David Okoro
+    # david okoro
+    if re.fullmatch(
+        r"[A-Za-z]+(?:\s+[A-Za-z]+){0,2}",
+        cleaned,
+    ):
+        words = cleaned.split()
+
+        if 1 <= len(words) <= 3:
+            return " ".join(word.capitalize() for word in words)
+
+    return None
+
+
+# =========================================================
+# EXTRACT PURPOSE
+# =========================================================
+
+def extract_purpose(text: str) -> Optional[str]:
+
+    lower = text.lower()
+
+    investment_words = [
+        "invest",
+        "investing",
+        "investment",
+        "for investment",
+        "as an investment",
+    ]
+
+    rent_words = [
+        "rent",
+        "rental",
+        "renting",
+        "lease",
+        "leasing",
+        "to let",
+    ]
+
+    buy_words = [
+        "buy",
+        "buying",
+        "purchase",
+        "purchasing",
+        "acquire",
+        "acquiring",
+    ]
+
+    if any(word in lower for word in investment_words):
+        return "Investment"
+
+    if any(word in lower for word in rent_words):
+        return "Renting"
+
+    if any(word in lower for word in buy_words):
+        return "Buying"
+
+    return None
+
+
+# =========================================================
+# EXTRACT PROPERTY TYPE
+# =========================================================
+
+def extract_property_type(text: str) -> Optional[str]:
+
+    lower = text.lower()
+
+    for pattern, property_type in PROPERTY_TYPE_PATTERNS:
+        if re.search(pattern, lower):
+            return property_type
+
+    return None
+
+
+# =========================================================
+# EXTRACT LOCATION
+# =========================================================
+
+def extract_location(text: str) -> Optional[str]:
+
+    lower = text.lower()
+
+    # Check more specific locations first.
+    sorted_locations = sorted(
+        LOCATIONS + NIGERIAN_STATES,
+        key=len,
+        reverse=True,
+    )
+
+    for location in sorted_locations:
+
+        pattern = r"\b" + re.escape(location.lower()) + r"\b"
+
+        if re.search(pattern, lower):
+            return location
+
+    return None
+
+
+# =========================================================
+# EXTRACT BEDROOMS
+# =========================================================
+
+def extract_bedrooms(text: str) -> Optional[int]:
+
+    patterns = [
+        r"\b(\d+)\s*(?:bedrooms?|beds?)\b",
+        r"\b(\d+)\s*bed\b",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                return None
+
+    return None
+
+
+# =========================================================
+# TIMELINE DETECTION
+# =========================================================
+
+def extract_timeline(text: str) -> Optional[str]:
+
+    cleaned = normalize_text(text)
+    lower = cleaned.lower()
+
+    # Immediate
+    if re.search(
+        r"\b(today|now|immediately|asap|right away|very soon)\b",
+        lower,
+    ):
+        return "Immediately"
+
+    # Relative periods
+    patterns = [
+        r"\bwithin\s+\d+\s+(?:day|days|week|weeks|month|months|year|years)\b",
+        r"\bin\s+\d+\s+(?:day|days|week|weeks|month|months|year|years)\b",
+        r"\b\d+\s+(?:day|days|week|weeks|month|months|year|years)\s+from\s+now\b",
+        r"\bthis\s+(?:week|month|year)\b",
+        r"\bnext\s+(?:week|month|year)\b",
+        r"\bearly\s+next\s+year\b",
+        r"\blater\s+next\s+year\b",
+        r"\bsometime\s+next\s+year\b",
+        r"\blater\s+this\s+year\b",
+        r"\bsometime\s+this\s+year\b",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, lower)
+
+        if match:
+            return match.group(0)
+
+    # Flexible expressions
+    flexible_patterns = [
+        r"\bwhen\s+i\s+find\s+(?:the\s+right\s+)?property\b",
+        r"\bwhen\s+i\s+find\s+something\s+suitable\b",
+        r"\bwhen\s+i\s+find\s+something\s+right\b",
+        r"\bwhen\s+i\s+find\s+the\s+right\s+place\b",
+    ]
+
+    for pattern in flexible_patterns:
+        match = re.search(pattern, lower)
+
+        if match:
+            return match.group(0)
+
+    # No specific timeline
+    if re.search(
+        r"\b(no\s+specific\s+timeline|no\s+timeline|not\s+sure|"
+        r"just\s+looking|flexible)\b",
+        lower,
+    ):
+        return "Flexible"
+
+    return None
+
+
+# =========================================================
+# BUDGET HELPERS
+# =========================================================
+
+def convert_amount(number: float, suffix: Optional[str]) -> float:
+
+    if not suffix:
+        return number
+
+    suffix = suffix.lower()
+
+    if suffix in ["k", "thousand"]:
+        return number * 1_000
+
+    if suffix in ["m", "million"]:
+        return number * 1_000_000
+
+    if suffix in ["b", "bn", "billion"]:
+        return number * 1_000_000_000
+
+    return number
+
+
+def format_naira(amount: Optional[float]) -> Optional[str]:
+
+    if amount is None:
+        return None
+
+    amount = float(amount)
+
+    if amount >= 1_000_000_000:
+        value = amount / 1_000_000_000
+
+        if value.is_integer():
+            return f"₦{int(value)} billion"
+
+        return f"₦{value:.2f} billion"
+
+    if amount >= 1_000_000:
+        value = amount / 1_000_000
+
+        if value.is_integer():
+            return f"₦{int(value)} million"
+
+        return f"₦{value:.2f} million"
+
+    if amount >= 1_000:
+        value = amount / 1_000
+
+        if value.is_integer():
+            return f"₦{int(value)}k"
+
+        return f"₦{value:.2f}k"
+
+    return f"₦{int(amount):,}"
+
+
+# =========================================================
+# EXTRACT BUDGET
+# =========================================================
+
+def extract_budget(text: str) -> Dict[str, Any]:
+
+    original = normalize_text(text)
+    lower = original.lower()
+
+    # -----------------------------------------------------
+    # IMPORTANT:
+    # Prevent "6 months" / "3 months" from becoming
+    # "6m" / "3m" budget.
+    # -----------------------------------------------------
+
+    protected = re.sub(
+        r"\b(?:within|in)?\s*\d+(?:\.\d+)?\s*"
+        r"(?:day|days|week|weeks|month|months|year|years)\b",
+        " ",
+        lower,
+    )
+
+    # -----------------------------------------------------
+    # Explicit no-budget statements
+    # -----------------------------------------------------
+
+    if re.search(
+        r"\b("
+        r"no\s+specific\s+budget|"
+        r"no\s+budget|"
+        r"not\s+sure\s+(?:about\s+)?(?:my\s+)?budget|"
+        r"budget\s+not\s+sure|"
+        r"don't\s+know\s+my\s+budget|"
+        r"do\s+not\s+know\s+my\s+budget|"
+        r"negotiable|"
+        r"flexible\s+budget"
+        r")\b",
+        protected,
+        re.IGNORECASE,
+    ):
+        return {
+            "budget": None,
+            "budget_text": "Flexible",
+        }
+
+    # -----------------------------------------------------
+    # Budget range
+    # Examples:
+    # 40m to 60m
+    # 40 million - 60 million
+    # between 40m and 60m
+    # -----------------------------------------------------
+
+    range_pattern = re.search(
+        r"(?:between\s+)?"
+        r"(?:₦|n|ngn)?\s*"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)?"
+        r"\s*(?:-|to|and)\s*"
+        r"(?:₦|n|ngn)?\s*"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)?",
+        protected,
+        re.IGNORECASE,
+    )
+
+    if range_pattern:
+
+        first = float(range_pattern.group(1).replace(",", ""))
+        first_suffix = range_pattern.group(2)
+
+        second = float(range_pattern.group(3).replace(",", ""))
+        second_suffix = range_pattern.group(4)
+
+        first_amount = convert_amount(first, first_suffix)
+        second_amount = convert_amount(second, second_suffix)
+
+        average = (first_amount + second_amount) / 2
+
+        return {
+            "budget": average,
+            "budget_text": (
+                f"{format_naira(first_amount)} - "
+                f"{format_naira(second_amount)}"
+            ),
+        }
+
+    # -----------------------------------------------------
+    # Explicit budget context
+    # -----------------------------------------------------
+
+    explicit_patterns = [
+        r"(?:budget|spend|afford|worth|price)\D{0,20}"
+        r"(?:₦|n|ngn)?\s*"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)?",
+
+        r"(?:up\s+to|around|about|approximately|approx)\s+"
+        r"(?:₦|n|ngn)?\s*"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)?",
+    ]
+
+    for pattern in explicit_patterns:
+
+        match = re.search(
+            pattern,
+            protected,
+            re.IGNORECASE,
+        )
+
+        if match:
+
+            number = float(match.group(1).replace(",", ""))
+            suffix = match.group(2)
+
+            amount = convert_amount(number, suffix)
+
+            # Prevent plain tiny numbers from being interpreted
+            # as property budgets unless currency/budget context exists.
+            if amount > 0:
+                return {
+                    "budget": amount,
+                    "budget_text": format_naira(amount),
+                }
+
+    # -----------------------------------------------------
+    # Currency-prefixed values
+    # Examples:
+    # ₦50m
+    # N50,000,000
+    # NGN 50 million
+    # -----------------------------------------------------
+
+    currency_pattern = re.search(
+        r"(?:₦|ngn|n)\s*"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)?",
+        protected,
+        re.IGNORECASE,
+    )
+
+    if currency_pattern:
+
+        number = float(
+            currency_pattern.group(1).replace(",", "")
+        )
+
+        suffix = currency_pattern.group(2)
+
+        amount = convert_amount(number, suffix)
+
+        return {
+            "budget": amount,
+            "budget_text": format_naira(amount),
+        }
+
+    # -----------------------------------------------------
+    # Number + million/billion/thousand
+    # Examples:
+    # 50 million
+    # 1.5 billion
+    # 800k
+    # -----------------------------------------------------
+
+    suffix_pattern = re.search(
+        r"\b"
+        r"(\d+(?:[.,]\d+)?)\s*"
+        r"(k|thousand|m|million|b|bn|billion)"
+        r"\b",
+        protected,
+        re.IGNORECASE,
+    )
+
+    if suffix_pattern:
+
+        number = float(
+            suffix_pattern.group(1).replace(",", "")
+        )
+
+        suffix = suffix_pattern.group(2)
+
+        amount = convert_amount(number, suffix)
+
+        return {
+            "budget": amount,
+            "budget_text": format_naira(amount),
+        }
+
+    # -----------------------------------------------------
+    # Large plain numbers
+    # 50000000
+    # 50,000,000
+    # -----------------------------------------------------
+
+    plain_number_pattern = re.search(
+        r"\b(\d{1,3}(?:,\d{3})+(?:\.\d+)?)\b",
+        protected,
+    )
+
+    if plain_number_pattern:
+
+        number = float(
+            plain_number_pattern.group(1).replace(",", "")
+        )
+
+        if number >= 100_000:
+            return {
+                "budget": number,
+                "budget_text": format_naira(number),
+            }
+
+    # 50000000 without commas
+    plain_large_pattern = re.search(
+        r"\b(\d{6,})\b",
+        protected,
+    )
+
+    if plain_large_pattern:
+
+        number = float(plain_large_pattern.group(1))
+
+        if number >= 100_000:
+            return {
+                "budget": number,
+                "budget_text": format_naira(number),
+            }
+
+    return {
+        "budget": None,
+        "budget_text": None,
+    }
+
+
+# =========================================================
+# LEAD QUALITY
+# =========================================================
+
+def calculate_lead_quality(lead: Dict[str, Any]) -> str:
+
+    required_core = [
+        lead.get("location"),
+        lead.get("property_type"),
+        lead.get("purpose"),
+        lead.get("budget"),
+        lead.get("timeline"),
+    ]
+
+    completed = sum(
+        1 for value in required_core
+        if value not in [None, "", "Flexible"]
+    )
+
+    if completed == 5:
+        return "HOT"
+
+    if completed >= 3:
+        return "WARM"
+
+    return "COLD"
+
+
+# =========================================================
+# NEXT MISSING FIELD
+# =========================================================
+
+def next_missing_field(lead: Dict[str, Any]) -> Optional[str]:
+
+    required_order = [
+        "purpose",
+        "location",
+        "property_type",
+        "budget",
+        "timeline",
+        "name",
+        "phone",
+        "email",
+    ]
+
+    for field in required_order:
+
+        value = lead.get(field)
+
+        if value in [None, ""]:
+            return field
+
+    return None
+
+
+# =========================================================
+# FRIENDLY QUESTION
+# =========================================================
+
+def question_for_field(field: Optional[str]) -> str:
+
+    questions = {
+        "purpose": "Are you looking to buy, rent, or invest?",
+        "location": "Which city or area are you interested in?",
+        "property_type": "What type of property are you looking for?",
+        "budget": "What is your approximate budget?",
+        "timeline": "When are you looking to move or complete the purchase?",
+        "name": "May I have your name?",
+        "phone": "What phone number can we use to contact you?",
+        "email": "What email address should we use to send you property options?",
+    }
+
+    return questions.get(
+        field,
+        "Tell me a little more about the property you need.",
+    )
+
+
+# =========================================================
+# UPDATE CLEAN MESSAGE
+# =========================================================
+
+def update_lead_message(
+    existing_message: Optional[str],
+    user_message: str,
+) -> str:
+
+    user_message = normalize_text(user_message)
+
+    if not user_message:
+        return existing_message or ""
+
+    lower = user_message.lower()
+
+    # Do NOT save contact-only responses as the main message.
+    if extract_email(user_message):
+        return existing_message or ""
+
+    if extract_phone(user_message):
+        return existing_message or ""
+
+    # Simple name-only responses should not overwrite the
+    # property request.
+    extracted_name = extract_name(user_message)
+
+    if extracted_name:
+        return existing_message or ""
+
+    # If this is the first substantive property request,
+    # save it once.
+    if not existing_message:
+        return user_message
+
+    # Do not duplicate exactly the same message.
+    if existing_message.strip().lower() == lower:
+        return existing_message
+
+    # Do not keep accumulating every conversational response.
+    # The original property request remains the lead message.
+    return existing_message
+
+
+# =========================================================
+# CREATE NEW SESSION
+# =========================================================
+
+def create_session(session_id: str) -> Dict[str, Any]:
+
+    sessions[session_id] = {
+        "session_id": session_id,
+        "name": None,
+        "email": None,
+        "phone": None,
+        "location": None,
+        "property_type": None,
+        "purpose": None,
+        "budget": None,
+        "budget_text": None,
+        "bedrooms": None,
+        "timeline": None,
+        "message": "",
+        "lead_quality": "COLD",
+        "main_problem": None,
+        "recommended_action": None,
+        "source": "real-estate-chatbot",
+        "property_images": [],
+        "n8n_sent": False,
+        "supabase_saved": False,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    return sessions[session_id]
+
+
+# =========================================================
+# EXTRACT INFORMATION FROM USER MESSAGE
+# =========================================================
+
+def update_session_from_message(
+    session: Dict[str, Any],
+    user_message: str,
+) -> None:
+
+    # -----------------------------------------------------
+    # Name
+    # -----------------------------------------------------
+
+    name = extract_name(user_message)
+
+    if name:
+        session["name"] = name
+
+    # -----------------------------------------------------
+    # Email
+    # -----------------------------------------------------
+
+    email = extract_email(user_message)
+
+    if email:
+        session["email"] = email
+
+    # -----------------------------------------------------
+    # Phone
+    # -----------------------------------------------------
+
+    phone = extract_phone(user_message)
+
+    if phone:
+        session["phone"] = phone
+
+    # -----------------------------------------------------
+    # Purpose
+    # -----------------------------------------------------
+
+    purpose = extract_purpose(user_message)
+
+    if purpose:
+        session["purpose"] = purpose
+
+    # -----------------------------------------------------
+    # Location
+    # -----------------------------------------------------
+
+    location = extract_location(user_message)
+
+    if location:
+        session["location"] = location
+
+    # -----------------------------------------------------
+    # Property type
+    # -----------------------------------------------------
+
+    property_type = extract_property_type(user_message)
+
+    if property_type:
+        session["property_type"] = property_type
+
+    # -----------------------------------------------------
+    # Bedrooms
+    # -----------------------------------------------------
+
+    bedrooms = extract_bedrooms(user_message)
+
+    if bedrooms is not None:
+        session["bedrooms"] = bedrooms
+
+    # -----------------------------------------------------
+    # Timeline
+    # -----------------------------------------------------
+
+    timeline = extract_timeline(user_message)
+
+    if timeline:
+        session["timeline"] = timeline
+
+    # -----------------------------------------------------
+    # Budget
+    # -----------------------------------------------------
+
+    budget_result = extract_budget(user_message)
+
+    if budget_result["budget"] is not None:
+        session["budget"] = budget_result["budget"]
+        session["budget_text"] = budget_result["budget_text"]
+
+    elif budget_result["budget_text"] == "Flexible":
+        session["budget"] = None
+        session["budget_text"] = "Flexible"
+
+    # -----------------------------------------------------
+    # CLEAN MESSAGE
+    # -----------------------------------------------------
+
+    session["message"] = update_lead_message(
+        session.get("message"),
+        user_message,
+    )
+
+    # -----------------------------------------------------
+    # Quality
+    # -----------------------------------------------------
+
+    session["lead_quality"] = calculate_lead_quality(session)
+
+
+# =========================================================
+# SEND LEAD TO N8N
+# =========================================================
+
+def send_to_n8n(
+    lead: Dict[str, Any],
+) -> Dict[str, Any]:
+
+    if not N8N_WEBHOOK_URL:
+        return {
+            "sent": False,
+            "status": None,
+            "error": "N8N webhook URL is not configured",
+        }
+
+    payload = {
+        "session_id": lead.get("session_id"),
+        "name": lead.get("name"),
+        "email": lead.get("email"),
+        "phone": lead.get("phone"),
+        "location": lead.get("location"),
+        "property_type": lead.get("property_type"),
+        "purpose": lead.get("purpose"),
+        "budget": lead.get("budget"),
+        "budget_text": lead.get("budget_text"),
+        "bedrooms": lead.get("bedrooms"),
+        "timeline": lead.get("timeline"),
+        "message": lead.get("message"),
+        "lead_quality": lead.get("lead_quality"),
+        "main_problem": lead.get("main_problem"),
+        "recommended_action": lead.get("recommended_action"),
+        "source": lead.get("source"),
+        "property_images": lead.get("property_images", []),
+    }
+
+    try:
+
+        response = requests.post(
+            N8N_WEBHOOK_URL,
+            json=payload,
+            timeout=20,
+        )
+
+        return {
+            "sent": response.ok,
+            "status": response.status_code,
+            "response": response.text[:1000],
+        }
+
+    except Exception as exc:
+
+        return {
+            "sent": False,
+            "status": None,
+            "error": str(exc),
+        }
+
+
+# =========================================================
+# SAVE LEAD TO SUPABASE
+# =========================================================
+
+def save_to_supabase(
+    lead: Dict[str, Any],
+) -> Dict[str, Any]:
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return {
+            "saved": False,
+            "status": None,
+            "error": "Supabase is not configured",
+        }
+
+    table_url = (
+        f"{SUPABASE_URL}/rest/v1/"
+        f"{quote(SUPABASE_TABLE, safe='')}"
+    )
+
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+
+    payload = {
+        "name": lead.get("name"),
+        "email": lead.get("email"),
+        "phone": lead.get("phone"),
+        "location": lead.get("location"),
+        "budget": lead.get("budget"),
+        "purpose": lead.get("purpose"),
+        "lead_quality": lead.get("lead_quality"),
+        "message": lead.get("message"),
+        "main_problem": lead.get("main_problem"),
+        "recommended_action": lead.get("recommended_action"),
+        "source": lead.get("source"),
+        "bedroom": lead.get("bedrooms"),
+        "property_type": lead.get("property_type"),
+        "timeline": lead.get("timeline"),
+        "property_images": lead.get(
+            "property_images",
+            [],
+        ),
+    }
+
+    try:
+
+        response = requests.post(
+            table_url,
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+
+        return {
+            "saved": response.ok,
+            "status": response.status_code,
+            "response": response.text[:1000],
+        }
+
+    except Exception as exc:
+
+        return {
+            "saved": False,
+            "status": None,
+            "error": str(exc),
+        }
+
+
+# =========================================================
+# ROOT
+# =========================================================
+
+@app.get("/")
+def root():
+    return {
+        "status": "working",
+        "message": "PropertyPilot AI API is running",
+    }
+
+
+# =========================================================
+# HEALTH
+# =========================================================
+
+@app.get("/api/v1/health")
+def health():
+    return {
+        "status": "healthy",
+        "message": "PropertyPilot AI API is running",
+    }
+
+
+# =========================================================
+# CHAT REQUEST
+# =========================================================
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str
+
+
+# =========================================================
+# LEAD REQUEST
+# =========================================================
+
+class LeadRequest(BaseModel):
+    session_id: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    property_type: Optional[str] = None
+    purpose: Optional[str] = None
+    budget: Optional[float] = None
+    budget_text: Optional[str] = None
+    bedrooms: Optional[int] = None
+    timeline: Optional[str] = None
+    message: Optional[str] = None
+    lead_quality: Optional[str] = None
+    main_problem: Optional[str] = None
+    recommended_action: Optional[str] = None
+    source: str = "real-estate-chatbot"
+    property_images: List[str] = Field(default_factory=list)
+
+
+# =========================================================
+# CHAT ENDPOINT
+# =========================================================
+
+@app.post("/api/v1/chat")
+def chat(request: ChatRequest):
+
+    session_id = request.session_id.strip()
+
+    user_message = normalize_text(request.message)
+
+    if not session_id:
+        session_id = str(uuid.uuid4())
+
+    if not user_message:
+        return {
+            "success": False,
+            "session_id": session_id,
+            "reply": "Please tell me what type of property you are looking for.",
+        }
+
+    if session_id not in sessions:
+        create_session(session_id)
+
+    session = sessions[session_id]
+
+    # Extract everything from this message.
+    update_session_from_message(
+        session,
+        user_message,
+    )
+
+    # Determine what is still missing.
+    missing_field = next_missing_field(session)
+
+    # -----------------------------------------------------
+    # COMPLETE LEAD
+    # -----------------------------------------------------
+
+    if missing_field is None:
+
+        session["lead_quality"] = calculate_lead_quality(
+            session
+        )
+
+        # Send to n8n only once.
+        n8n_result = {
+            "sent": session.get("n8n_sent", False)
+        }
+
+        if not session.get("n8n_sent"):
+
+            n8n_result = send_to_n8n(session)
+
+            if n8n_result.get("sent"):
+                session["n8n_sent"] = True
+
+        # Save to Supabase only once.
+        supabase_result = {
+            "saved": session.get("supabase_saved", False)
+        }
+
+        if not session.get("supabase_saved"):
+
+            supabase_result = save_to_supabase(session)
+
+            if supabase_result.get("saved"):
+                session["supabase_saved"] = True
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "reply": (
+                "Perfect! I have everything I need. "
+                "Our property team can now review your "
+                "requirements and get back to you with "
+                "suitable options."
+            ),
+            "lead_quality": session["lead_quality"],
+            "missing_field": None,
+            "complete": True,
+            "lead": session,
+            "integrations": {
+                "n8n": n8n_result,
+                "supabase": supabase_result,
+            },
+        }
+
+    # -----------------------------------------------------
+    # CONTINUE CONVERSATION
+    # -----------------------------------------------------
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "reply": question_for_field(missing_field),
+        "lead_quality": session["lead_quality"],
+        "missing_field": missing_field,
+        "complete": False,
+        "lead": session,
+        "integrations": {
+            "n8n": {
+                "sent": session.get("n8n_sent", False)
+            },
+            "supabase": {
+                "saved": session.get(
+                    "supabase_saved",
+                    False,
+                )
+            },
+        },
+    }
+
+
+# =========================================================
+# MANUAL LEAD ENDPOINT
+# =========================================================
+
+@app.post("/api/v1/leads")
+def create_lead(request: LeadRequest):
+
+    lead = request.model_dump()
+
+    if not lead.get("session_id"):
+        lead["session_id"] = str(uuid.uuid4())
+
+    if not lead.get("lead_quality"):
+        lead["lead_quality"] = calculate_lead_quality(
+            lead
+        )
+
+    n8n_result = send_to_n8n(lead)
+
+    supabase_result = save_to_supabase(lead)
+
+    return {
+        "success": True,
+        "message": "Lead processed",
+        "lead": lead,
+        "integrations": {
+            "n8n": n8n_result,
+            "supabase": supabase_result,
+        },
+    }
+
+
+# =========================================================
+# IMAGE UPLOAD
+# =========================================================
+
+@app.post("/api/v1/upload")
+async def upload_image(
+    file: UploadFile = File(...),
+):
+
+    allowed_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+    }
+
+    if file.content_type not in allowed_types:
+        return {
+            "success": False,
+            "error": (
+                "Unsupported image type. "
+                "Please upload JPG, PNG, WEBP, or GIF."
+            ),
+        }
+
+    # 8 MB maximum.
+    max_size = 8 * 1024 * 1024
+
+    contents = await file.read()
+
+    if len(contents) > max_size:
+        return {
+            "success": False,
+            "error": "Image is larger than 8MB.",
+        }
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return {
+            "success": False,
+            "error": "Supabase is not configured.",
+        }
+
+    original_name = file.filename or "property-image"
+
+    extension = os.path.splitext(
+        original_name
+    )[1].lower()
+
+    if not extension:
+        extension = ".jpg"
+
+    filename = (
+        f"{uuid.uuid4().hex}"
+        f"{extension}"
+    )
+
+    storage_url = (
+        f"{SUPABASE_URL}/storage/v1/object/"
+        f"{SUPABASE_BUCKET}/{filename}"
+    )
+
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": file.content_type,
+        "x-upsert": "false",
+    }
+
+    try:
+
+        response = requests.post(
+            storage_url,
+            headers=headers,
+            data=contents,
+            timeout=30,
+        )
+
+        if not response.ok:
+
+            return {
+                "success": False,
+                "status": response.status_code,
+                "error": response.text[:1000],
+            }
+
+        public_url = (
+            f"{SUPABASE_URL}/storage/v1/object/public/"
+            f"{SUPABASE_BUCKET}/{filename}"
+        )
+
+        return {
+            "success": True,
+            "filename": filename,
+            "url": public_url,
+            "message": "Property image uploaded successfully.",
+        }
+
+    except Exception as exc:
+
+        return {
+            "success": False,
+            "error": str(exc),
+        }
+
+
+# =========================================================
+# GET SESSION
+# =========================================================
+
+@app.get("/api/v1/sessions/{session_id}")
+def get_session(session_id: str):
+
+    session = sessions.get(session_id)
+
+    if not session:
+        return {
+            "success": False,
+            "message": "Session not found",
+        }
+
+    return {
+        "success": True,
+        "session": session,
+    }
+
+
+# =========================================================
+# DELETE SESSION
+# =========================================================
+
+@app.delete("/api/v1/sessions/{session_id}")
+def delete_session(session_id: str):
+
+    if session_id in sessions:
+        del sessions[session_id]
+
+    return {
+        "success": True,
+        "message": "Session cleared",
+    }

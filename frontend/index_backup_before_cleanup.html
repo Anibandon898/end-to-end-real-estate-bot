@@ -1,0 +1,3791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PropertyPilot AI | Smart Real Estate Assistant</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+    --black:#111111;
+    --black-2:#181818;
+    --black-3:#242424;
+
+    --gold:#c89b3c;
+    --gold-light:#f5ead0;
+    --gold-soft:#fff8e8;
+
+    --cream:#faf9f6;
+    --white:#ffffff;
+
+    --text:#202124;
+    --muted:#737373;
+    --muted-2:#999999;
+
+    --border:#e7e4df;
+    --border-dark:#303030;
+
+    --green:#1c9b55;
+    --green-light:#ecfdf3;
+
+    --red:#dc2626;
+    --red-light:#fef2f2;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:#f4f4f2;
+    color:var(--text);
+    min-height:100vh;
+}
+
+button,
+input{
+    font-family:inherit;
+}
+
+button{
+    -webkit-tap-highlight-color:transparent;
+}
+
+.app{
+    min-height:100vh;
+}
+
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.navbar{
+    height:72px;
+
+    background:
+        rgba(255,255,255,.96);
+
+    backdrop-filter:blur(15px);
+
+    border-bottom:
+        1px solid var(--border);
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:
+        0 5%;
+
+    position:sticky;
+    top:0;
+    z-index:100;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+
+    background:var(--black);
+    color:var(--gold);
+
+    border-radius:11px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:20px;
+    font-weight:800;
+
+    box-shadow:
+        0 5px 15px rgba(0,0,0,.12);
+}
+
+.brand-text h2{
+    font-size:18px;
+    color:var(--black);
+    line-height:1.1;
+}
+
+.brand-text span{
+    display:block;
+
+    font-size:10px;
+    color:var(--muted);
+
+    margin-top:4px;
+}
+
+.online-status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    color:#777;
+    font-size:12px;
+}
+
+.online-dot{
+    width:8px;
+    height:8px;
+
+    background:#22c55e;
+    border-radius:50%;
+
+    box-shadow:
+        0 0 0 4px rgba(34,197,94,.10);
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.main{
+    width:92%;
+    max-width:1300px;
+
+    margin:30px auto;
+
+    display:grid;
+
+    grid-template-columns:
+        .88fr
+        1.12fr;
+
+    gap:25px;
+}
+
+
+/* =========================================================
+   INTRO PANEL
+========================================================= */
+
+.intro-panel{
+    background:
+        radial-gradient(
+            circle at 80% 10%,
+            rgba(200,155,60,.12),
+            transparent 25%
+        ),
+        var(--black);
+
+    color:white;
+
+    border-radius:24px;
+
+    padding:45px 40px;
+
+    min-height:700px;
+
+    position:relative;
+    overflow:hidden;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.12);
+}
+
+.intro-panel::before{
+    content:"";
+
+    position:absolute;
+
+    width:340px;
+    height:340px;
+
+    border:
+        1px solid
+        rgba(200,155,60,.25);
+
+    border-radius:50%;
+
+    right:-130px;
+    top:-100px;
+}
+
+.intro-panel::after{
+    content:"";
+
+    position:absolute;
+
+    width:250px;
+    height:250px;
+
+    border:
+        1px solid
+        rgba(200,155,60,.16);
+
+    border-radius:50%;
+
+    left:-120px;
+    bottom:-110px;
+}
+
+.intro-content{
+    position:relative;
+    z-index:2;
+}
+
+.eyebrow{
+    display:inline-flex;
+
+    padding:
+        8px 13px;
+
+    background:
+        rgba(200,155,60,.14);
+
+    border:
+        1px solid
+        rgba(200,155,60,.30);
+
+    color:#e7c875;
+
+    border-radius:50px;
+
+    font-size:10px;
+
+    letter-spacing:1.5px;
+
+    margin-bottom:25px;
+}
+
+.intro-panel h1{
+    font-size:
+        clamp(36px,4vw,56px);
+
+    line-height:1.04;
+
+    margin-bottom:22px;
+
+    letter-spacing:-1.5px;
+}
+
+.intro-panel h1 span{
+    color:var(--gold);
+}
+
+.intro-description{
+    color:#b9b9b9;
+
+    font-size:14px;
+
+    line-height:1.8;
+
+    max-width:470px;
+}
+
+.features{
+    margin-top:35px;
+
+    display:grid;
+    gap:14px;
+}
+
+.feature{
+    display:flex;
+    align-items:center;
+
+    gap:13px;
+
+    color:#d5d5d5;
+
+    font-size:13px;
+}
+
+.feature-icon{
+    width:34px;
+    height:34px;
+
+    flex-shrink:0;
+
+    border-radius:9px;
+
+    background:
+        rgba(255,255,255,.07);
+
+    color:var(--gold);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-weight:bold;
+}
+
+.stats{
+    position:relative;
+    z-index:2;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:10px;
+
+    margin-top:35px;
+}
+
+.stat{
+    background:
+        rgba(255,255,255,.06);
+
+    border:
+        1px solid
+        rgba(255,255,255,.08);
+
+    padding:15px;
+
+    border-radius:13px;
+}
+
+.stat strong{
+    display:block;
+
+    color:var(--gold);
+
+    font-size:20px;
+
+    margin-bottom:4px;
+}
+
+.stat span{
+    color:#999;
+
+    font-size:10px;
+}
+
+
+/* =========================================================
+   CHAT PANEL
+========================================================= */
+
+.chat-panel{
+    background:white;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:24px;
+
+    overflow:hidden;
+
+    display:flex;
+    flex-direction:column;
+
+    min-height:700px;
+
+    box-shadow:
+        0 15px 45px rgba(0,0,0,.07);
+}
+
+
+/* =========================================================
+   CHAT HEADER
+========================================================= */
+
+.chat-header{
+    padding:
+        18px 22px;
+
+    border-bottom:
+        1px solid
+        var(--border);
+
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:15px;
+
+    background:white;
+}
+
+.assistant-info{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+.assistant-avatar{
+    width:45px;
+    height:45px;
+
+    border-radius:13px;
+
+    background:var(--black);
+
+    color:var(--gold);
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    font-weight:bold;
+
+    position:relative;
+}
+
+.avatar-dot{
+    position:absolute;
+
+    width:10px;
+    height:10px;
+
+    background:#22c55e;
+
+    border:
+        2px solid
+        white;
+
+    border-radius:50%;
+
+    right:-2px;
+    bottom:-2px;
+}
+
+.assistant-name{
+    font-weight:bold;
+
+    font-size:15px;
+}
+
+.assistant-status{
+    color:var(--green);
+
+    font-size:11px;
+
+    margin-top:4px;
+}
+
+.header-right{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+.progress-wrapper{
+    width:125px;
+}
+
+.progress-label{
+    display:flex;
+
+    justify-content:space-between;
+
+    color:#999;
+
+    font-size:9px;
+
+    margin-bottom:5px;
+}
+
+.progress-track{
+    width:100%;
+
+    height:5px;
+
+    background:#eee;
+
+    border-radius:20px;
+
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:100%;
+
+    width:0%;
+
+    background:var(--gold);
+
+    transition:
+        width .4s ease;
+}
+
+.new-chat{
+    border:
+        1px solid
+        var(--border);
+
+    background:white;
+
+    padding:
+        9px 12px;
+
+    border-radius:8px;
+
+    color:#666;
+
+    cursor:pointer;
+
+    font-size:11px;
+
+    transition:.2s;
+}
+
+.new-chat:hover{
+    border-color:var(--gold);
+
+    color:#9a741e;
+
+    background:
+        var(--gold-soft);
+}
+
+
+/* =========================================================
+   CHAT BODY
+========================================================= */
+
+.chat-body{
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:22px;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(200,155,60,.07),
+            transparent 30%
+        ),
+        #fafafa;
+
+    scroll-behavior:smooth;
+}
+
+.date-label{
+    text-align:center;
+
+    color:#aaa;
+
+    font-size:9px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    margin-bottom:18px;
+}
+
+.message-row{
+    display:flex;
+
+    margin-bottom:17px;
+
+    animation:
+        messageIn .25s ease;
+}
+
+@keyframes messageIn{
+
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+.message-row.user{
+    justify-content:flex-end;
+}
+
+.message{
+    max-width:80%;
+
+    padding:
+        13px 15px;
+
+    border-radius:15px;
+
+    font-size:14px;
+
+    line-height:1.6;
+
+    word-break:break-word;
+}
+
+.message.bot{
+    background:white;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-top-left-radius:5px;
+
+    color:#373737;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.025);
+}
+
+.message.user{
+    background:var(--black);
+
+    color:white;
+
+    border-top-right-radius:5px;
+}
+
+.message-content{
+    white-space:pre-wrap;
+}
+
+.message-time{
+    display:block;
+
+    font-size:9px;
+
+    opacity:.5;
+
+    margin-top:7px;
+}
+
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
+.quick-actions{
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:8px;
+
+    margin:
+        5px 0 20px;
+}
+
+.quick-button{
+    border:
+        1px solid
+        #ddd;
+
+    background:white;
+
+    color:#444;
+
+    padding:
+        9px 12px;
+
+    border-radius:20px;
+
+    font-size:11px;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.quick-button:hover{
+    border-color:var(--gold);
+
+    color:#8a681e;
+
+    background:var(--gold-light);
+
+    transform:translateY(-1px);
+}
+
+.quick-button:active{
+    transform:translateY(0);
+}
+
+
+/* =========================================================
+   TYPING
+========================================================= */
+
+.typing-row{
+    display:none;
+}
+
+.typing{
+    display:flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    background:white;
+
+    border:
+        1px solid
+        var(--border);
+
+    padding:
+        12px 15px;
+
+    border-radius:15px;
+
+    width:max-content;
+}
+
+.typing span{
+    width:6px;
+    height:6px;
+
+    background:#aaa;
+
+    border-radius:50%;
+
+    animation:
+        typing 1.2s infinite;
+}
+
+.typing span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.typing span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes typing{
+
+    0%,60%,100%{
+        transform:translateY(0);
+    }
+
+    30%{
+        transform:translateY(-5px);
+    }
+
+}
+
+
+/* =========================================================
+   SUCCESS CARD
+========================================================= */
+
+.success-card{
+    margin-top:8px;
+
+    background:white;
+
+    border:
+        1px solid
+        #d8eadf;
+
+    border-radius:14px;
+
+    padding:15px;
+
+    max-width:90%;
+
+    box-shadow:
+        0 5px 15px rgba(0,0,0,.03);
+}
+
+.success-header{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+}
+
+.success-title{
+    font-weight:bold;
+
+    font-size:13px;
+}
+
+.quality{
+    font-size:9px;
+
+    font-weight:bold;
+
+    padding:
+        5px 9px;
+
+    border-radius:30px;
+
+    background:#ecfdf3;
+
+    color:#15803d;
+}
+
+.success-text{
+    color:#777;
+
+    font-size:11px;
+
+    line-height:1.5;
+
+    margin-top:7px;
+}
+
+.integrations{
+    display:flex;
+
+    gap:7px;
+
+    flex-wrap:wrap;
+
+    margin-top:10px;
+}
+
+.integration{
+    font-size:9px;
+
+    color:#777;
+
+    padding:
+        5px 8px;
+
+    background:#f7f7f7;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:7px;
+}
+
+
+/* =========================================================
+   IMAGE PREVIEW AREA
+========================================================= */
+
+.attachment-area{
+    display:none;
+
+    padding:
+        10px 10px 2px;
+
+    border-bottom:
+        1px solid
+        var(--border);
+
+    background:white;
+}
+
+.attachment-area.visible{
+    display:block;
+}
+
+.attachment-header{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:8px;
+
+    font-size:10px;
+
+    color:#777;
+}
+
+.clear-attachments{
+    border:none;
+
+    background:transparent;
+
+    color:#999;
+
+    cursor:pointer;
+
+    font-size:10px;
+}
+
+.clear-attachments:hover{
+    color:var(--red);
+}
+
+.attachment-list{
+    display:flex;
+
+    gap:8px;
+
+    overflow-x:auto;
+
+    padding-bottom:8px;
+}
+
+.attachment-item{
+    width:68px;
+    height:68px;
+
+    flex-shrink:0;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    position:relative;
+
+    background:#eee;
+
+    border:
+        1px solid
+        var(--border);
+}
+
+.attachment-item img{
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+    display:block;
+}
+
+.remove-attachment{
+    position:absolute;
+
+    top:3px;
+    right:3px;
+
+    width:19px;
+    height:19px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:
+        rgba(0,0,0,.72);
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:12px;
+
+    line-height:19px;
+
+    padding:0;
+}
+
+.attachment-count{
+    position:absolute;
+
+    bottom:3px;
+    left:3px;
+
+    right:3px;
+
+    background:
+        rgba(0,0,0,.62);
+
+    color:white;
+
+    font-size:8px;
+
+    padding:3px;
+
+    text-align:center;
+
+    border-radius:5px;
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.input-wrapper{
+    padding:15px;
+
+    background:white;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.input-box{
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    background:#f7f7f7;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:13px;
+
+    padding:6px;
+
+    transition:.2s;
+}
+
+.input-box:focus-within{
+    border-color:
+        rgba(200,155,60,.7);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(200,155,60,.08);
+}
+
+#messageInput{
+    flex:1;
+
+    min-width:0;
+
+    border:none;
+
+    outline:none;
+
+    background:transparent;
+
+    padding:
+        11px 7px;
+
+    font-size:14px;
+}
+
+#messageInput::placeholder{
+    color:#aaa;
+}
+
+
+/* =========================================================
+   ATTACH BUTTON
+========================================================= */
+
+#uploadButton{
+    width:40px;
+    height:40px;
+
+    flex-shrink:0;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:transparent;
+
+    color:#777;
+
+    cursor:pointer;
+
+    font-size:19px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    transition:.2s;
+}
+
+#uploadButton:hover{
+    background:var(--gold-light);
+
+    color:#9a741e;
+}
+
+#uploadButton:disabled{
+    opacity:.4;
+
+    cursor:not-allowed;
+}
+
+#imageInput{
+    display:none;
+}
+
+
+/* =========================================================
+   SEND
+========================================================= */
+
+#sendButton{
+    width:42px;
+    height:42px;
+
+    flex-shrink:0;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:var(--black);
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:17px;
+
+    transition:.2s;
+}
+
+#sendButton:hover{
+    background:#292929;
+
+    transform:translateY(-1px);
+}
+
+#sendButton:active{
+    transform:translateY(0);
+}
+
+#sendButton:disabled{
+    opacity:.5;
+
+    cursor:not-allowed;
+
+    transform:none;
+}
+
+.input-note{
+    text-align:center;
+
+    color:#aaa;
+
+    font-size:9px;
+
+    margin-top:8px;
+}
+
+
+/* =========================================================
+   UPLOAD STATUS
+========================================================= */
+
+.upload-status{
+    display:none;
+
+    font-size:9px;
+
+    color:#888;
+
+    margin:
+        5px 2px 0;
+}
+
+.upload-status.visible{
+    display:block;
+}
+
+.upload-status.error{
+    color:var(--red);
+}
+
+.upload-status.success{
+    color:var(--green);
+}
+
+
+/* =========================================================
+   EMPTY / ERROR
+========================================================= */
+
+.connection-banner{
+    display:none;
+
+    margin:
+        0 0 15px;
+
+    padding:
+        10px 12px;
+
+    border-radius:10px;
+
+    background:var(--red-light);
+
+    border:
+        1px solid
+        #fecaca;
+
+    color:#991b1b;
+
+    font-size:10px;
+
+    line-height:1.5;
+}
+
+.connection-banner.visible{
+    display:block;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:900px){
+
+    .main{
+        grid-template-columns:1fr;
+    }
+
+    .intro-panel{
+        min-height:auto;
+    }
+
+    .chat-panel{
+        min-height:680px;
+    }
+
+}
+
+@media(max-width:600px){
+
+    .navbar{
+        padding:
+            0 18px;
+    }
+
+    .brand-text h2{
+        font-size:16px;
+    }
+
+    .online-status{
+        display:none;
+    }
+
+    .main{
+        width:94%;
+
+        margin:
+            15px auto;
+    }
+
+    .intro-panel{
+        padding:30px;
+
+        border-radius:18px;
+    }
+
+    .intro-panel h1{
+        font-size:38px;
+    }
+
+    .chat-panel{
+        border-radius:18px;
+
+        min-height:650px;
+    }
+
+    .progress-wrapper{
+        display:none;
+    }
+
+    .message{
+        max-width:90%;
+    }
+
+    .chat-body{
+        padding:16px;
+    }
+
+    .chat-header{
+        padding:
+            14px 15px;
+    }
+
+    .assistant-avatar{
+        width:40px;
+        height:40px;
+    }
+
+    .stats{
+        margin-top:30px;
+    }
+
+    .quick-button{
+        font-size:10px;
+        padding:
+            8px 10px;
+    }
+
+    #messageInput{
+        font-size:13px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .brand-text span{
+        display:none;
+    }
+
+    .intro-panel h1{
+        font-size:33px;
+    }
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+<!-- =======================================================
+     NAVBAR
+======================================================= -->
+
+<nav class="navbar">
+
+    <div class="brand">
+
+        <div class="logo">
+            P
+        </div>
+
+        <div class="brand-text">
+
+            <h2>
+                PropertyPilot AI
+            </h2>
+
+            <span>
+                Smart Real Estate Assistant
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="online-status">
+
+        <div class="online-dot"></div>
+
+        Assistant Online
+
+    </div>
+
+</nav>
+
+
+
+<!-- =======================================================
+     MAIN
+======================================================= -->
+
+<main class="main">
+
+
+<!-- =======================================================
+     INTRO
+======================================================= -->
+
+<section class="intro-panel">
+
+    <div class="intro-content">
+
+        <div class="eyebrow">
+            AI REAL ESTATE ASSISTANT
+        </div>
+
+
+        <h1>
+
+            Your next property
+            <br>
+
+            starts with a
+            <span>
+                conversation.
+            </span>
+
+        </h1>
+
+
+        <p class="intro-description">
+
+            Tell PropertyPilot AI what you are looking for.
+
+            We'll understand your requirements, budget,
+            location and timeline, then qualify your
+            property request.
+
+        </p>
+
+
+        <div class="features">
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    âœ“
+                </div>
+
+                <span>
+                    Understands your property requirements
+                </span>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    â‚¦
+                </div>
+
+                <span>
+                    Works with your budget
+                </span>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    âš¡
+                </div>
+
+                <span>
+                    Smart HOT / WARM / COLD qualification
+                </span>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    â—†
+                </div>
+
+                <span>
+                    Connects qualified requests to your team
+                </span>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    🏢“·
+                </div>
+
+                <span>
+                    Share property images with your request
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <strong>
+                24/7
+            </strong>
+
+            <span>
+                Assistant
+            </span>
+
+        </div>
+
+
+        <div class="stat">
+
+            <strong>
+                AI
+            </strong>
+
+            <span>
+                Powered
+            </span>
+
+        </div>
+
+
+        <div class="stat">
+
+            <strong>
+                1:1
+            </strong>
+
+            <span>
+                Assistance
+            </span>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =======================================================
+     CHAT
+======================================================= -->
+
+<section class="chat-panel">
+
+
+<!-- HEADER -->
+
+<div class="chat-header">
+
+
+    <div class="assistant-info">
+
+
+        <div class="assistant-avatar">
+
+            â—†
+
+            <div class="avatar-dot"></div>
+
+        </div>
+
+
+        <div>
+
+            <div class="assistant-name">
+                PropertyPilot AI
+            </div>
+
+            <div class="assistant-status">
+                â— Online • Ready to help
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <div class="header-right">
+
+
+        <div class="progress-wrapper">
+
+            <div class="progress-label">
+
+                <span>
+                    Lead progress
+                </span>
+
+                <span id="progressText">
+                    0%
+                </span>
+
+            </div>
+
+
+            <div class="progress-track">
+
+                <div
+                    class="progress-bar"
+                    id="progressBar">
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="new-chat"
+            id="newChatButton"
+            type="button">
+
+            New Chat
+
+        </button>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- CHAT BODY -->
+
+<div
+    class="chat-body"
+    id="chatBox">
+
+
+    <div class="date-label">
+        Today
+    </div>
+
+
+    <div class="message-row">
+
+        <div class="message bot">
+
+            <div class="message-content">
+
+Hello! 👋 I'm your PropertyPilot AI real estate assistant.
+
+I can help you define your property needs, budget, location and timeline.
+
+You can simply tell me things naturally â€” for example:
+
+"My name is David"
+"David Okoro"
+"I'm David and I need a house in Uyo"
+"I need a 3-bedroom house in Abuja"
+
+May I have your name?
+
+            </div>
+
+            <span class="message-time">
+                Just now
+            </span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- QUICK ACTIONS -->
+
+    <div
+        class="quick-actions"
+        id="quickActions">
+
+
+        <button
+            type="button"
+            class="quick-button"
+            data-message="I am looking for a house">
+
+            🏢  Find a house
+
+        </button>
+
+
+        <button
+            type="button"
+            class="quick-button"
+            data-message="I am looking for an apartment">
+
+            🏢¢ Find an apartment
+
+        </button>
+
+
+        <button
+            type="button"
+            class="quick-button"
+            data-message="I am looking for land">
+
+            🏢Œ Find land
+
+        </button>
+
+
+        <button
+            type="button"
+            class="quick-button"
+            data-message="I want to invest in property">
+
+            🏢“ˆ Property investment
+
+        </button>
+
+
+        <button
+            type="button"
+            class="quick-button"
+            data-message="I want to rent a property">
+
+            🏢”‘ Rent a property
+
+        </button>
+
+
+    </div>
+
+
+
+    <!-- CONNECTION ERROR -->
+
+    <div
+        class="connection-banner"
+        id="connectionBanner">
+
+        PropertyPilot AI is temporarily unable to connect
+        to the assistant server. Please check the backend
+        connection and try again.
+
+    </div>
+
+
+
+    <!-- TYPING -->
+
+    <div
+        class="message-row typing-row"
+        id="typingRow">
+
+        <div
+            class="typing"
+            id="typingIndicator">
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =======================================================
+     INPUT
+======================================================= -->
+
+<div class="input-wrapper">
+
+
+    <!-- ATTACHMENT PREVIEW -->
+
+    <div
+        class="attachment-area"
+        id="attachmentArea">
+
+
+        <div class="attachment-header">
+
+            <span id="attachmentTitle">
+                Property images
+            </span>
+
+
+            <button
+                type="button"
+                class="clear-attachments"
+                id="clearAttachments">
+
+                Clear all
+
+            </button>
+
+        </div>
+
+
+        <div
+            class="attachment-list"
+            id="attachmentList">
+        </div>
+
+
+    </div>
+
+
+
+    <!-- UPLOAD STATUS -->
+
+    <div
+        class="upload-status"
+        id="uploadStatus">
+    </div>
+
+
+
+    <div class="input-box">
+
+
+        <!-- HIDDEN FILE INPUT -->
+
+        <input
+            type="file"
+            id="imageInput"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+        >
+
+
+        <!-- UPLOAD BUTTON -->
+
+        <button
+            id="uploadButton"
+            type="button"
+            title="Upload property images"
+            aria-label="Upload property images">
+
+            🏢“Ž
+
+        </button>
+
+
+        <!-- MESSAGE -->
+
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Tell me what property you need..."
+            autocomplete="off"
+        >
+
+
+        <!-- SEND -->
+
+        <button
+            id="sendButton"
+            type="button"
+            title="Send message"
+            aria-label="Send message">
+
+            ➤
+
+        </button>
+
+
+    </div>
+
+
+    <div class="input-note">
+
+        Your information is used to understand
+        and process your property request.
+
+    </div>
+
+
+</div>
+
+
+</section>
+
+</main>
+
+</div>
+
+
+
+<script>
+
+/* ============================================================
+   PROPERTY PILOT AI
+   FRONTEND ENGINE
+============================================================ */
+
+
+/*
+    ==========================================================
+    API
+    ==========================================================
+
+    Production Render backend.
+*/
+
+const API_URL = "http://127.0.0.1:8000/api/v1/chat";
+const UPLOAD_API_URL = "http://127.0.0.1:8000/api/v1/upload-image";
+const SESSION_KEY =
+    "propertypilot_session";
+
+
+const TOTAL_FIELDS = 8;
+
+
+/*
+    Maximum images selected at once.
+*/
+
+const MAX_IMAGES = 8;
+
+
+/*
+    Maximum image size.
+
+    8 MB.
+*/
+
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+
+
+
+/* ============================================================
+   SESSION
+============================================================ */
+
+function createSessionId(){
+
+    if(
+        window.crypto &&
+        typeof window.crypto.randomUUID === "function"
+    ){
+
+        return window.crypto.randomUUID();
+
+    }
+
+    return (
+        "propertypilot-" +
+        Date.now() +
+        "-" +
+        Math.random()
+            .toString(36)
+            .substring(2,10)
+    );
+
+}
+
+
+function getSessionId(){
+
+    let session =
+        localStorage.getItem(
+            SESSION_KEY
+        );
+
+
+    if(!session){
+
+        session =
+            createSessionId();
+
+        localStorage.setItem(
+            SESSION_KEY,
+            session
+        );
+
+    }
+
+
+    return session;
+
+}
+
+
+let sessionId =
+    getSessionId();
+
+
+
+/* ============================================================
+   ELEMENTS
+============================================================ */
+
+const chatBox =
+    document.getElementById(
+        "chatBox"
+    );
+
+
+const messageInput =
+    document.getElementById(
+        "messageInput"
+    );
+
+
+const sendButton =
+    document.getElementById(
+        "sendButton"
+    );
+
+
+const newChatButton =
+    document.getElementById(
+        "newChatButton"
+    );
+
+
+const progressBar =
+    document.getElementById(
+        "progressBar"
+    );
+
+
+const progressText =
+    document.getElementById(
+        "progressText"
+    );
+
+
+let typingRow =
+    document.getElementById(
+        "typingRow"
+    );
+
+
+let typingIndicator =
+    document.getElementById(
+        "typingIndicator"
+    );
+
+
+const uploadButton =
+    document.getElementById(
+        "uploadButton"
+    );
+
+
+const imageInput =
+    document.getElementById(
+        "imageInput"
+    );
+
+
+const attachmentArea =
+    document.getElementById(
+        "attachmentArea"
+    );
+
+
+const attachmentList =
+    document.getElementById(
+        "attachmentList"
+    );
+
+
+const attachmentTitle =
+    document.getElementById(
+        "attachmentTitle"
+    );
+
+
+const clearAttachments =
+    document.getElementById(
+        "clearAttachments"
+    );
+
+
+const uploadStatus =
+    document.getElementById(
+        "uploadStatus"
+    );
+
+
+const connectionBanner =
+    document.getElementById(
+        "connectionBanner"
+    );
+
+
+
+/* ============================================================
+   STATE
+============================================================ */
+
+let busy = false;
+
+let selectedImages = [];
+
+let uploadedImages = [];
+
+
+
+/* ============================================================
+   TIME
+============================================================ */
+
+function currentTime(){
+
+    return new Date().toLocaleTimeString(
+        [],
+        {
+            hour:"2-digit",
+            minute:"2-digit"
+        }
+    );
+
+}
+
+
+
+/* ============================================================
+   ADD MESSAGE
+============================================================ */
+
+function addMessage(
+    text,
+    type
+){
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+
+    row.className =
+        "message-row" +
+        (
+            type === "user"
+                ? " user"
+                : ""
+        );
+
+
+    const message =
+        document.createElement(
+            "div"
+        );
+
+
+    message.className =
+        "message " +
+        type;
+
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+
+    content.className =
+        "message-content";
+
+
+    content.textContent =
+        text;
+
+
+    const time =
+        document.createElement(
+            "span"
+        );
+
+
+    time.className =
+        "message-time";
+
+
+    time.textContent =
+        currentTime();
+
+
+    message.appendChild(
+        content
+    );
+
+
+    message.appendChild(
+        time
+    );
+
+
+    row.appendChild(
+        message
+    );
+
+
+    chatBox.insertBefore(
+        row,
+        typingRow
+    );
+
+
+    scrollToBottom();
+
+}
+
+
+
+/* ============================================================
+   IMAGE MESSAGE
+============================================================ */
+
+function addImageMessage(){
+
+    if(
+        selectedImages.length === 0
+    ){
+
+        return;
+
+    }
+
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+
+    row.className =
+        "message-row user";
+
+
+    const message =
+        document.createElement(
+            "div"
+        );
+
+
+    message.className =
+        "message user";
+
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+
+    content.className =
+        "message-content";
+
+
+    content.textContent =
+        selectedImages.length === 1
+            ? "🏢“· Property image attached"
+            : `🏢“· ${selectedImages.length} property images attached`;
+
+
+    message.appendChild(
+        content
+    );
+
+
+    const time =
+        document.createElement(
+            "span"
+        );
+
+
+    time.className =
+        "message-time";
+
+
+    time.textContent =
+        currentTime();
+
+
+    message.appendChild(
+        time
+    );
+
+
+    row.appendChild(
+        message
+    );
+
+
+    chatBox.insertBefore(
+        row,
+        typingRow
+    );
+
+
+    scrollToBottom();
+
+}
+
+
+
+/* ============================================================
+   SCROLL
+============================================================ */
+
+function scrollToBottom(){
+
+    requestAnimationFrame(
+        () => {
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+
+        }
+    );
+
+}
+
+
+
+/* ============================================================
+   TYPING
+============================================================ */
+
+function showTyping(){
+
+    if(!typingRow){
+        return;
+    }
+
+
+    typingRow.style.display =
+        "flex";
+
+
+    if(typingIndicator){
+
+        typingIndicator.style.display =
+            "flex";
+
+    }
+
+
+    scrollToBottom();
+
+}
+
+
+function hideTyping(){
+
+    if(!typingRow){
+        return;
+    }
+
+
+    typingRow.style.display =
+        "none";
+
+
+    if(typingIndicator){
+
+        typingIndicator.style.display =
+            "none";
+
+    }
+
+}
+
+
+
+/* ============================================================
+   PROGRESS
+============================================================ */
+
+function updateProgress(data){
+
+    if(
+        !data ||
+        !data.collected_data
+    ){
+
+        return;
+
+    }
+
+
+    const collected =
+        data.collected_data;
+
+
+    const fields = [
+
+        "name",
+        "email",
+        "phone",
+        "purpose",
+        "location",
+        "property_type",
+        "budget",
+        "timeline"
+
+    ];
+
+
+    let completed =
+        0;
+
+
+    fields.forEach(
+        field => {
+
+            const value =
+                collected[field];
+
+
+            if(
+                value !== null &&
+                value !== undefined &&
+                String(value).trim() !== ""
+            ){
+
+                completed++;
+
+            }
+
+        }
+    );
+
+
+    const percent =
+        Math.round(
+            (
+                completed /
+                TOTAL_FIELDS
+            ) * 100
+        );
+
+
+    progressBar.style.width =
+        percent + "%";
+
+
+    progressText.textContent =
+        percent + "%";
+
+}
+
+
+
+/* ============================================================
+   SUCCESS CARD
+============================================================ */
+
+function addSuccessCard(data){
+
+    const quality =
+        data.lead_quality ||
+        (
+            data.collected_data &&
+            data.collected_data.lead_quality
+        ) ||
+        "COLD";
+
+
+    const n8n =
+        data.integrations &&
+        data.integrations.n8n &&
+        data.integrations.n8n.sent;
+
+
+    const supabase =
+        data.integrations &&
+        data.integrations.supabase &&
+        data.integrations.supabase.saved;
+
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+
+    row.className =
+        "message-row";
+
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.className =
+        "success-card";
+
+
+    card.innerHTML = `
+
+        <div class="success-header">
+
+            <div class="success-title">
+
+                âœ“ Property request received
+
+            </div>
+
+            <div class="quality">
+
+                ${escapeHtml(quality)} LEAD
+
+            </div>
+
+        </div>
+
+
+        <div class="success-text">
+
+            Your requirements have been captured
+            successfully. Our real estate team can
+            now follow up with your request.
+
+        </div>
+
+
+        <div class="integrations">
+
+            <div class="integration">
+
+                n8n:
+                ${n8n ? "Connected" : "Pending"}
+
+            </div>
+
+
+            <div class="integration">
+
+                Database:
+                ${supabase ? "Saved" : "Pending"}
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    row.appendChild(
+        card
+    );
+
+
+    chatBox.insertBefore(
+        row,
+        typingRow
+    );
+
+
+    scrollToBottom();
+
+}
+
+
+
+/* ============================================================
+   ESCAPE HTML
+============================================================ */
+
+function escapeHtml(value){
+
+    return String(value)
+        .replace(
+            /[&<>"']/g,
+            function(character){
+
+                const map = {
+
+                    "&":"&amp;",
+                    "<":"&lt;",
+                    ">":"&gt;",
+                    '"':"&quot;",
+                    "'":"&#039;"
+
+                };
+
+                return map[character];
+
+            }
+        );
+
+}
+
+
+
+/* ============================================================
+   UPLOAD STATUS
+============================================================ */
+
+function setUploadStatus(
+    text,
+    type = ""
+){
+
+    uploadStatus.textContent =
+        text;
+
+
+    uploadStatus.className =
+        "upload-status";
+
+
+    if(text){
+
+        uploadStatus.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    if(type){
+
+        uploadStatus.classList.add(
+            type
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   RENDER IMAGE PREVIEWS
+============================================================ */
+
+function renderImagePreviews(){
+
+    attachmentList.innerHTML =
+        "";
+
+
+    if(
+        selectedImages.length === 0
+    ){
+
+        attachmentArea.classList.remove(
+            "visible"
+        );
+
+        attachmentTitle.textContent =
+            "Property images";
+
+        return;
+
+    }
+
+
+    attachmentArea.classList.add(
+        "visible"
+    );
+
+
+    attachmentTitle.textContent =
+        selectedImages.length === 1
+            ? "1 property image"
+            : `${selectedImages.length} property images`;
+
+
+    selectedImages.forEach(
+        (item,index) => {
+
+            const wrapper =
+                document.createElement(
+                    "div"
+                );
+
+
+            wrapper.className =
+                "attachment-item";
+
+
+            const image =
+                document.createElement(
+                    "img"
+                );
+
+
+            image.src =
+                item.preview;
+
+
+            image.alt =
+                "Property image";
+
+
+            const remove =
+                document.createElement(
+                    "button"
+                );
+
+
+            remove.type =
+                "button";
+
+
+            remove.className =
+                "remove-attachment";
+
+
+            remove.textContent =
+                "Ã—";
+
+
+            remove.title =
+                "Remove image";
+
+
+            remove.addEventListener(
+                "click",
+                () => {
+
+                    removeImage(index);
+
+                }
+            );
+
+
+            wrapper.appendChild(
+                image
+            );
+
+
+            wrapper.appendChild(
+                remove
+            );
+
+
+            attachmentList.appendChild(
+                wrapper
+            );
+
+        }
+    );
+
+
+    scrollToBottom();
+
+}
+
+
+
+/* ============================================================
+   REMOVE IMAGE
+============================================================ */
+
+function removeImage(index){
+
+    if(
+        selectedImages[index] &&
+        selectedImages[index].preview
+    ){
+
+        URL.revokeObjectURL(
+            selectedImages[index].preview
+        );
+
+    }
+
+
+    selectedImages.splice(
+        index,
+        1
+    );
+
+
+    renderImagePreviews();
+
+
+    if(
+        selectedImages.length === 0
+    ){
+
+        setUploadStatus(
+            ""
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   CLEAR IMAGES
+============================================================ */
+
+function clearAllImages(){
+
+    selectedImages.forEach(
+        item => {
+
+            if(item.preview){
+
+                URL.revokeObjectURL(
+                    item.preview
+                );
+
+            }
+
+        }
+    );
+
+
+    selectedImages = [];
+
+
+    uploadedImages = [];
+
+
+    imageInput.value =
+        "";
+
+
+    renderImagePreviews();
+
+
+    setUploadStatus(
+        ""
+    );
+
+}
+
+
+
+/* ============================================================
+   HANDLE FILES
+============================================================ */
+
+function handleSelectedFiles(
+    files
+){
+
+    if(!files || !files.length){
+
+        return;
+
+    }
+
+
+    const incoming =
+        Array.from(files);
+
+
+    if(
+        selectedImages.length +
+        incoming.length >
+        MAX_IMAGES
+    ){
+
+        setUploadStatus(
+            `You can attach a maximum of ${MAX_IMAGES} images.`,
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    let accepted =
+        0;
+
+
+    incoming.forEach(
+        file => {
+
+            if(
+                !file.type.startsWith(
+                    "image/"
+                )
+            ){
+
+                return;
+
+            }
+
+
+            if(
+                file.size >
+                MAX_IMAGE_SIZE
+            ){
+
+                setUploadStatus(
+                    `${file.name} is larger than 20MB.`,
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            const preview =
+                URL.createObjectURL(
+                    file
+                );
+
+
+            selectedImages.push({
+
+                file:
+                    file,
+
+                preview:
+                    preview,
+
+                name:
+                    file.name,
+
+                size:
+                    file.size,
+
+                type:
+                    file.type
+
+            });
+
+
+            accepted++;
+
+        }
+    );
+
+
+    if(accepted > 0){
+
+        setUploadStatus(
+            `${accepted} image${accepted > 1 ? "s" : ""} ready to attach.`,
+            "success"
+        );
+
+    }
+
+
+    renderImagePreviews();
+
+}
+
+
+
+/* ============================================================
+   UPLOAD IMAGES
+============================================================ */
+
+/*
+    This function is ready for the backend endpoint:
+
+    POST /api/v1/upload
+
+    The backend can later upload the images to
+    Supabase Storage and return their public URLs.
+
+    Until that endpoint is available, the frontend still
+    allows the user to select and preview images without
+    breaking the chatbot.
+*/
+
+async function uploadImages(){
+
+    if(
+        selectedImages.length === 0
+    ){
+
+        return [];
+
+    }
+
+
+    const uploaded = [];
+
+
+    for(
+        const item of selectedImages
+    ){
+
+        try{
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "file",
+                item.file
+            );
+
+
+            formData.append(
+                "session_id",
+                sessionId
+            );
+
+
+            const response =
+                await fetch(
+                    UPLOAD_API_URL,
+                    {
+                        method:"POST",
+                        body:formData
+                    }
+                );
+
+
+            if(
+                !response.ok
+            ){
+
+                /*
+                    If the upload endpoint does not
+                    exist yet, don't break the chat.
+                */
+
+                if(
+                    response.status === 404
+                ){
+
+                    console.warn(
+                        "Image upload endpoint is not active yet."
+                    );
+
+                    return [];
+
+                }
+
+
+                throw new Error(
+                    "Image upload failed."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if(
+                data.url
+            ){
+
+                uploaded.push(
+                    data.url
+                );
+
+            }
+            else if(
+                data.image_url
+            ){
+
+                uploaded.push(
+                    data.image_url
+                );
+
+            }
+
+        }
+        catch(error){
+
+            console.warn(
+                "Image upload:",
+                error
+            );
+
+            /*
+                Do not stop normal chat because
+                image storage is unavailable.
+            */
+
+            return [];
+
+        }
+
+    }
+
+
+    return uploaded;
+
+}
+
+
+
+/* ============================================================
+   SEND MESSAGE
+============================================================ */
+
+async function sendMessage(){
+
+    if(busy){
+
+        return;
+
+    }
+
+
+    const message =
+        messageInput.value.trim();
+
+
+    /*
+        Allow image-only messages.
+    */
+
+    if(
+        !message &&
+        selectedImages.length === 0
+    ){
+
+        messageInput.focus();
+
+        return;
+
+    }
+
+
+    busy = true;
+
+
+    sendButton.disabled =
+        true;
+
+
+    uploadButton.disabled =
+        true;
+
+
+    connectionBanner.classList.remove(
+        "visible"
+    );
+
+
+    /*
+        Show user's text.
+    */
+
+    if(message){
+
+        addMessage(
+            message,
+            "user"
+        );
+
+    }
+
+
+    /*
+        Show attached image message.
+    */
+
+    if(
+        selectedImages.length > 0
+    ){
+
+        addImageMessage();
+
+    }
+
+
+    messageInput.value =
+        "";
+
+
+    showTyping();
+
+
+    try{
+
+        /*
+            Try uploading images.
+
+            If the backend upload endpoint is not
+            available, normal chat continues.
+        */
+
+        uploadedImages =
+            await uploadImages();
+
+
+        let finalMessage = message;
+
+        if(
+            !finalMessage
+        ){
+
+            finalMessage =
+                "I have attached property image(s). Please help me with this property.";
+
+        }
+
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+
+                        session_id:
+                            sessionId,
+
+                        message:
+                            finalMessage
+
+                    })
+
+                }
+            );
+
+
+        let data;
+
+
+        try{
+
+            data =
+                await response.json();
+
+        }
+        catch(jsonError){
+
+            throw new Error(
+                "The server returned an invalid response."
+            );
+
+        }
+
+
+        hideTyping();
+
+
+        if(
+            !response.ok ||
+            data.success === false
+        ){
+
+            throw new Error(
+                data.error ||
+                data.detail ||
+                "Unable to process message."
+            );
+
+        }
+
+
+        connectionBanner.classList.remove(
+            "visible"
+        );
+
+
+        addMessage(
+            data.reply ||
+            "I received your message.",
+            "bot"
+        );
+
+
+        updateProgress(
+            data
+        );
+
+
+        if(data.lead_complete){
+
+            addSuccessCard(
+                data
+            );
+
+        }
+
+
+        /*
+            Clear images only after successful
+            chat processing.
+        */
+
+        clearAllImages();
+
+
+    }
+    catch(error){
+
+        hideTyping();
+
+
+        console.error(
+            "PropertyPilot AI Error:",
+            error
+        );
+
+
+        connectionBanner.classList.add(
+            "visible"
+        );
+
+
+        addMessage(
+            "I'm having trouble connecting to PropertyPilot AI right now. Please try again in a moment.",
+            "bot"
+        );
+
+    }
+    finally{
+
+        busy = false;
+
+
+        sendButton.disabled =
+            false;
+
+
+        uploadButton.disabled =
+            false;
+
+
+        messageInput.focus();
+
+    }
+
+}
+
+
+
+/* ============================================================
+   QUICK ACTIONS
+============================================================ */
+
+function setupQuickActions(){
+
+    document
+        .querySelectorAll(
+            ".quick-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    function(){
+
+                        /*
+                            Put the suggestion in the
+                            input so the user can edit it.
+                        */
+
+                        messageInput.value =
+                            this.dataset.message;
+
+
+                        messageInput.focus();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+
+/* ============================================================
+   NEW CHAT
+============================================================ */
+
+function resetChat(){
+
+    clearAllImages();
+
+
+    localStorage.removeItem(
+        SESSION_KEY
+    );
+
+
+    sessionId =
+        createSessionId();
+
+
+    localStorage.setItem(
+        SESSION_KEY,
+        sessionId
+    );
+
+
+    chatBox.innerHTML = `
+
+        <div class="date-label">
+            Today
+        </div>
+
+
+        <div class="message-row">
+
+            <div class="message bot">
+
+                <div class="message-content">
+
+Welcome! 👋 I'm your PropertyPilot AI real estate assistant.
+
+Let's start a fresh conversation.
+
+You can speak naturally. For example:
+
+"David"
+"David Okoro"
+"I'm David"
+"I'm David Okoro"
+"My name is David"
+
+May I have your name?
+
+                </div>
+
+                <span class="message-time">
+                    Just now
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="quick-actions"
+            id="quickActions">
+
+
+            <button
+                type="button"
+                class="quick-button"
+                data-message="I am looking for a house">
+
+                🏢  Find a house
+
+            </button>
+
+
+            <button
+                type="button"
+                class="quick-button"
+                data-message="I am looking for an apartment">
+
+                🏢¢ Find an apartment
+
+            </button>
+
+
+            <button
+                type="button"
+                class="quick-button"
+                data-message="I am looking for land">
+
+                🏢Œ Find land
+
+            </button>
+
+
+            <button
+                type="button"
+                class="quick-button"
+                data-message="I want to invest in property">
+
+                🏢“ˆ Property investment
+
+            </button>
+
+
+            <button
+                type="button"
+                class="quick-button"
+                data-message="I want to rent a property">
+
+                🏢”‘ Rent a property
+
+            </button>
+
+
+        </div>
+
+
+        <div
+            class="connection-banner"
+            id="connectionBanner">
+
+            PropertyPilot AI is temporarily unable to connect
+            to the assistant server.
+
+        </div>
+
+
+        <div
+            class="message-row typing-row"
+            id="typingRow">
+
+            <div
+                class="typing"
+                id="typingIndicator">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    /*
+        Reconnect dynamic elements.
+    */
+
+    typingRow =
+        document.getElementById(
+            "typingRow"
+        );
+
+
+    typingIndicator =
+        document.getElementById(
+            "typingIndicator"
+        );
+
+
+    progressBar.style.width =
+        "0%";
+
+
+    progressText.textContent =
+        "0%";
+
+
+    busy =
+        false;
+
+
+    sendButton.disabled =
+        false;
+
+
+    uploadButton.disabled =
+        false;
+
+
+    messageInput.value =
+        "";
+
+
+    setupQuickActions();
+
+
+    messageInput.focus();
+
+
+    scrollToBottom();
+
+}
+
+
+
+/* ============================================================
+   FILE INPUT
+============================================================ */
+
+uploadButton.addEventListener(
+    "click",
+    function(){
+
+        if(busy){
+
+            return;
+
+        }
+
+        imageInput.click();
+
+    }
+);
+
+
+imageInput.addEventListener(
+    "change",
+    function(){
+
+        handleSelectedFiles(
+            this.files
+        );
+
+    }
+);
+
+
+
+/* ============================================================
+   CLEAR ATTACHMENTS
+============================================================ */
+
+clearAttachments.addEventListener(
+    "click",
+    clearAllImages
+);
+
+
+
+/* ============================================================
+   DRAG AND DROP
+============================================================ */
+
+const inputBox =
+    document.querySelector(
+        ".input-box"
+    );
+
+
+inputBox.addEventListener(
+    "dragover",
+    function(event){
+
+        event.preventDefault();
+
+        inputBox.style.borderColor =
+            "var(--gold)";
+
+    }
+);
+
+
+inputBox.addEventListener(
+    "dragleave",
+    function(){
+
+        inputBox.style.borderColor =
+            "";
+
+    }
+);
+
+
+inputBox.addEventListener(
+    "drop",
+    function(event){
+
+        event.preventDefault();
+
+        inputBox.style.borderColor =
+            "";
+
+        handleSelectedFiles(
+            event.dataTransfer.files
+        );
+
+    }
+);
+
+
+
+/* ============================================================
+   SEND BUTTON
+============================================================ */
+
+sendButton.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+
+/* ============================================================
+   NEW CHAT
+============================================================ */
+
+newChatButton.addEventListener(
+    "click",
+    resetChat
+);
+
+
+
+/* ============================================================
+   ENTER KEY
+============================================================ */
+
+messageInput.addEventListener(
+    "keydown",
+    function(event){
+
+        if(
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+
+/* ============================================================
+   START
+============================================================ */
+
+setupQuickActions();
+
+messageInput.focus();
+
+
+/*
+    Initial status.
+*/
+
+setUploadStatus("");
+
+</script>
+
+</body>
+</html>
+
+
+

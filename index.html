@@ -1,1719 +1,2082 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>PropertyPilot AI | Smart Real Estate Assistant</title>
-
-    <meta
-        name="description"
-        content="PropertyPilot AI is your smart real estate assistant for finding the right property."
-    >
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --black: #0b0b0b;
-            --black-soft: #141414;
-            --gold: #d4af37;
-            --gold-light: #f1d77a;
-            --cream: #f7f2e7;
-            --white: #ffffff;
-            --gray: #a8a8a8;
-            --border: rgba(212, 175, 55, 0.22);
-            --user: #d4af37;
-            --assistant: #181818;
-        }
-
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--black);
-            color: var(--white);
-            min-height: 100vh;
-        }
-
-        button,
-        input {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        .app {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ================= HEADER ================= */
-
-        header {
-            height: 74px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 6%;
-            background: rgba(11, 11, 11, 0.96);
-            position: sticky;
-            top: 0;
-            z-index: 20;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo {
-            width: 42px;
-            height: 42px;
-            border: 2px solid var(--gold);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gold);
-            font-weight: 800;
-            font-size: 17px;
-        }
-
-        .brand-text h1 {
-            font-size: 18px;
-            letter-spacing: 1px;
-        }
-
-        .brand-text span {
-            color: var(--gold);
-        }
-
-        .brand-text p {
-            font-size: 10px;
-            color: var(--gray);
-            margin-top: 3px;
-            letter-spacing: 1.2px;
-        }
-
-        .new-chat {
-            background: transparent;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            padding: 10px 16px;
-            border-radius: 8px;
-            transition: 0.2s;
-        }
-
-        .new-chat:hover {
-            background: var(--gold);
-            color: var(--black);
-        }
-
-        /* ================= HERO ================= */
-
-        .hero {
-            text-align: center;
-            padding: 45px 20px 25px;
-        }
-
-        .hero .eyebrow {
-            color: var(--gold);
-            font-size: 11px;
-            letter-spacing: 3px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .hero h2 {
-            font-size: clamp(28px, 5vw, 52px);
-            line-height: 1.08;
-            max-width: 850px;
-            margin: 0 auto;
-        }
-
-        .hero h2 span {
-            color: var(--gold);
-        }
-
-        .hero p {
-            max-width: 650px;
-            margin: 15px auto 0;
-            color: var(--gray);
-            line-height: 1.6;
-            font-size: 15px;
-        }
-
-        /* ================= CHAT ================= */
-
-        .chat-wrapper {
-            width: min(900px, 94%);
-            margin: 0 auto 40px;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            overflow: hidden;
-            background: #101010;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-        }
-
-        .progress-area {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border);
-            background: #0e0e0e;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: var(--gray);
-            margin-bottom: 8px;
-        }
-
-        .progress-bar {
-            height: 5px;
-            background: #272727;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--gold);
-            transition: width 0.3s ease;
-        }
-
-        .chat-box {
-            height: 480px;
-            overflow-y: auto;
-            padding: 22px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            scroll-behavior: smooth;
-        }
-
-        .message {
-            max-width: 82%;
-            padding: 13px 15px;
-            border-radius: 14px;
-            line-height: 1.5;
-            font-size: 14px;
-            word-wrap: break-word;
-        }
-
-        .message.assistant {
-            align-self: flex-start;
-            background: var(--assistant);
-            border: 1px solid #292929;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background: var(--user);
-            color: #080808;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message .label {
-            display: block;
-            font-size: 9px;
-            letter-spacing: 1.2px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            opacity: 0.65;
-        }
-
-        /* ================= IMAGE MESSAGE ================= */
-
-        .message-image {
-            display: block;
-            max-width: 260px;
-            max-height: 220px;
-            width: auto;
-            height: auto;
-            border-radius: 10px;
-            margin-top: 5px;
-            object-fit: cover;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .image-message-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 6px;
-        }
-
-        .image-message-grid img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 9px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        /* ================= TYPING ================= */
-
-        .typing {
-            display: none;
-            align-self: flex-start;
-            background: var(--assistant);
-            border: 1px solid #292929;
-            border-radius: 14px;
-            border-bottom-left-radius: 4px;
-            padding: 12px 16px;
-        }
-
-        .typing span {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: var(--gold);
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: bounce 1.2s infinite;
-        }
-
-        .typing span:nth-child(2) {
-            animation-delay: 0.15s;
-        }
-
-        .typing span:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-
-        @keyframes bounce {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.45;
-            }
-
-            30% {
-                transform: translateY(-5px);
-                opacity: 1;
-            }
-        }
-
-        /* ================= QUICK BUTTONS ================= */
-
-        .quick-actions {
-            padding: 0 20px 15px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .quick-btn {
-            border: 1px solid #343434;
-            background: #161616;
-            color: #ddd;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-
-        .quick-btn:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        /* ================= INPUT ================= */
-
-        .input-area {
-            border-top: 1px solid var(--border);
-            padding: 15px;
-            background: #0d0d0d;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        #messageInput {
-            flex: 1;
-            background: #181818;
-            color: white;
-            border: 1px solid #303030;
-            border-radius: 10px;
-            padding: 13px 14px;
-            outline: none;
-            min-width: 0;
-        }
-
-        #messageInput:focus {
-            border-color: var(--gold);
-        }
-
-        #messageInput::placeholder {
-            color: #777;
-        }
-
-        /* ================= UPLOAD BUTTON ================= */
-
-        #uploadButton {
-            width: 48px;
-            height: 48px;
-            flex-shrink: 0;
-            border: 1px solid #343434;
-            border-radius: 10px;
-            background: #181818;
-            color: var(--gold);
-            font-size: 21px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-        }
-
-        #uploadButton:hover {
-            border-color: var(--gold);
-            background: #222;
-        }
-
-        #uploadButton:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        #imageInput {
-            display: none;
-        }
-
-        /* ================= SEND ================= */
-
-        #sendButton {
-            width: 52px;
-            height: 48px;
-            flex-shrink: 0;
-            border: none;
-            border-radius: 10px;
-            background: var(--gold);
-            color: #080808;
-            font-size: 20px;
-            font-weight: 800;
-            transition: 0.2s;
-        }
-
-        #sendButton:hover {
-            background: var(--gold-light);
-        }
-
-        #sendButton:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        /* ================= IMAGE PREVIEW ================= */
-
-        .image-preview-area {
-            display: none;
-            padding: 10px 0 2px;
-        }
-
-        .image-preview-title {
-            font-size: 10px;
-            color: var(--gray);
-            margin-bottom: 8px;
-            letter-spacing: 0.8px;
-        }
-
-        .image-preview-list {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-
-        .preview-item {
-            position: relative;
-            width: 76px;
-            height: 76px;
-            flex: 0 0 76px;
-        }
-
-        .preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 9px;
-            border: 1px solid #343434;
-        }
-
-        .preview-remove {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 21px;
-            height: 21px;
-            border: 1px solid #111;
-            border-radius: 50%;
-            background: #111;
-            color: white;
-            font-size: 12px;
-            line-height: 18px;
-            padding: 0;
-        }
-
-        .preview-remove:hover {
-            background: #d44;
-        }
-
-        .upload-status {
-            font-size: 11px;
-            color: #777;
-            padding-top: 5px;
-        }
-
-        /* ================= STATUS ================= */
-
-        .status {
-            min-height: 18px;
-            padding: 7px 3px 0;
-            font-size: 11px;
-            color: #777;
-        }
-
-        .status.error {
-            color: #ff7777;
-        }
-
-        .status.success {
-            color: #8fd18f;
-        }
-
-        /* ================= FOOTER ================= */
-
-        footer {
-            text-align: center;
-            padding: 0 20px 30px;
-            color: #666;
-            font-size: 11px;
-        }
-
-        footer span {
-            color: var(--gold);
-        }
-
-        /* ================= MOBILE ================= */
-
-        @media (max-width: 600px) {
-
-            header {
-                height: 68px;
-                padding: 0 16px;
-            }
-
-            .logo {
-                width: 37px;
-                height: 37px;
-                font-size: 15px;
-            }
-
-            .brand-text h1 {
-                font-size: 15px;
-            }
-
-            .brand-text p {
-                font-size: 8px;
-            }
-
-            .new-chat {
-                padding: 8px 10px;
-                font-size: 11px;
-            }
-
-            .hero {
-                padding: 30px 17px 20px;
-            }
-
-            .hero h2 {
-                font-size: 30px;
-            }
-
-            .hero p {
-                font-size: 13px;
-            }
-
-            .chat-wrapper {
-                width: 96%;
-                border-radius: 14px;
-                margin-bottom: 25px;
-            }
-
-            .chat-box {
-                height: 54vh;
-                min-height: 380px;
-                padding: 15px;
-            }
-
-            .message {
-                max-width: 90%;
-                font-size: 13px;
-            }
-
-            .quick-actions {
-                padding: 0 12px 12px;
-            }
-
-            .quick-btn {
-                font-size: 11px;
-            }
-
-            .input-area {
-                padding: 10px;
-            }
-
-            #messageInput {
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            #uploadButton {
-                width: 45px;
-                height: 45px;
-            }
-
-            #sendButton {
-                width: 47px;
-                height: 45px;
-            }
-
-            .preview-item {
-                width: 65px;
-                height: 65px;
-                flex-basis: 65px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PropertyPilot AI | Find Property With Confidence</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --ink: #11110f;
+    --cream: #f7f4ed;
+    --cream-dark: #ece7dc;
+    --gold: #c6a15b;
+    --gold-light: #dfc27f;
+    --white: #ffffff;
+    --muted: #77736b;
+    --line: rgba(17, 17, 15, 0.12);
+    --shadow: 0 18px 50px rgba(17, 17, 15, 0.10);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "Inter", sans-serif;
+    line-height: 1.6;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+img {
+    display: block;
+    width: 100%;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(247, 244, 237, 0.94);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+}
+
+.nav-inner {
+    width: min(1180px, calc(100% - 48px));
+    height: 76px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.logo-mark {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    place-items: center;
+    background: var(--ink);
+    color: var(--gold-light);
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.logo-text span {
+    color: var(--gold);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    font-size: 14px;
+    color: #45433e;
+}
+
+.nav-links a:hover {
+    color: var(--gold);
+}
+
+.nav-cta {
+    padding: 11px 19px;
+    background: var(--ink);
+    color: var(--white);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+    width: min(1180px, calc(100% - 48px));
+    margin: 0 auto;
+    min-height: 560px;
+    padding: 58px 0 42px;
+    display: grid;
+    grid-template-columns: 0.93fr 1.07fr;
+    gap: 42px;
+    align-items: center;
+}
+
+.hero-content {
+    padding-right: 10px;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #76603a;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+}
+
+.eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: var(--gold);
+}
+
+.hero h1 {
+    font-family: "DM Serif Display", serif;
+    font-size: clamp(48px, 5.3vw, 76px);
+    font-weight: 400;
+    line-height: 0.98;
+    letter-spacing: -2px;
+    max-width: 620px;
+}
+
+.hero h1 span {
+    color: var(--gold);
+}
+
+.hero-text {
+    max-width: 525px;
+    color: var(--muted);
+    font-size: 16px;
+    margin: 25px 0;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.primary-btn {
+    border: 0;
+    padding: 14px 23px;
+    background: var(--ink);
+    color: white;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.primary-btn:hover {
+    background: #292824;
+}
+
+.secondary-btn {
+    border: 1px solid var(--line);
+    padding: 13px 21px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: transparent;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 30px;
+    margin-top: 34px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 21px;
+}
+
+.stat span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.hero-visual {
+    position: relative;
+}
+
+.hero-image {
+    height: 490px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.hero-card {
+    position: absolute;
+    left: -28px;
+    bottom: 26px;
+    width: 235px;
+    background: white;
+    padding: 18px;
+    border-radius: 11px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.16);
+}
+
+.hero-card-label {
+    color: var(--gold);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hero-card h3 {
+    font-family: "DM Serif Display", serif;
+    font-weight: 400;
+    font-size: 23px;
+    margin: 5px 0;
+}
+
+.hero-card p {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-wrap {
+    width: min(1080px, calc(100% - 48px));
+    margin: -8px auto 55px;
+    position: relative;
+    z-index: 5;
+}
+
+.search-card {
+    background: var(--ink);
+    color: white;
+    border-radius: 13px;
+    padding: 22px;
+    box-shadow: 0 22px 55px rgba(17,17,15,.18);
+}
+
+.search-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.search-heading h2 {
+    font-family: "DM Serif Display", serif;
+    font-weight: 400;
+    font-size: 25px;
+}
+
+.search-heading span {
+    color: #bdb9b0;
+    font-size: 12px;
+}
+
+.search-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 9px;
+}
+
+.search-field {
+    background: #20201d;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 6px;
+    padding: 11px 12px;
+    color: white;
+}
+
+.search-field label {
+    display: block;
+    font-size: 9px;
+    color: #99958c;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    margin-bottom: 4px;
+}
+
+.search-field select,
+.search-field input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: white;
+    font-size: 12px;
+}
+
+.search-field select option {
+    color: #111;
+}
+
+.search-btn {
+    border: 0;
+    border-radius: 6px;
+    background: var(--gold);
+    color: var(--ink);
+    padding: 0 20px;
+    font-weight: 700;
+}
+
+/* =========================
+   SECTION COMMON
+========================= */
+
+.section {
+    width: min(1180px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 55px 0;
+}
+
+.section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.section-heading h2 {
+    font-family: "DM Serif Display", serif;
+    font-size: 40px;
+    font-weight: 400;
+    line-height: 1;
+}
+
+.section-heading p {
+    max-width: 420px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* =========================
+   CATEGORIES
+========================= */
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.category {
+    min-height: 165px;
+    padding: 23px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: .25s ease;
+}
+
+.category:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.category-icon {
+    width: 43px;
+    height: 43px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #f0eadc;
+    color: var(--gold);
+    font-size: 20px;
+}
+
+.category h3 {
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.category p {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* =========================
+   PROPERTIES
+========================= */
+
+.properties-section {
+    background: #eeeae1;
+    width: 100%;
+    padding: 65px 0;
+}
+
+.properties-inner {
+    width: min(1180px, calc(100% - 48px));
+    margin: auto;
+}
+
+.property-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.property-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+}
+
+.property-image {
+    height: 235px;
+    object-fit: cover;
+}
+
+.property-info {
+    padding: 17px;
+}
+
+.property-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 10px;
+}
+
+.property-info h3 {
+    font-family: "DM Serif Display", serif;
+    font-size: 23px;
+    font-weight: 400;
+}
+
+.property-price {
+    color: #8a6b30;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.property-location {
+    color: var(--muted);
+    font-size: 11px;
+    margin: 4px 0 13px;
+}
+
+.property-meta {
+    display: flex;
+    gap: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: #5e5a53;
+    font-size: 11px;
+}
+
+/* =========================
+   AI SECTION
+========================= */
+
+.ai-section {
+    width: min(1180px, calc(100% - 48px));
+    margin: auto;
+    padding: 72px 0;
+}
+
+.ai-card {
+    background: var(--ink);
+    color: white;
+    border-radius: 16px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 425px;
+}
+
+.ai-copy {
+    padding: 55px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ai-copy .eyebrow {
+    color: var(--gold-light);
+}
+
+.ai-copy h2 {
+    font-family: "DM Serif Display", serif;
+    font-size: 48px;
+    line-height: 1;
+    font-weight: 400;
+    max-width: 470px;
+}
+
+.ai-copy p {
+    color: #b8b5ad;
+    font-size: 14px;
+    max-width: 450px;
+    margin: 20px 0 25px;
+}
+
+.ai-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ai-point {
+    border: 1px solid rgba(255,255,255,.1);
+    padding: 12px;
+    border-radius: 7px;
+    color: #d3d0c9;
+    font-size: 11px;
+}
+
+.ai-point strong {
+    display: block;
+    color: white;
+    margin-bottom: 2px;
+}
+
+.ai-visual {
+    min-height: 425px;
+    background:
+        linear-gradient(rgba(17,17,15,.05), rgba(17,17,15,.25)),
+        url("https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1000&q=85")
+        center/cover;
+}
+
+/* =========================
+   PROCESS
+========================= */
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 13px;
+}
+
+.process-card {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 24px;
+    border-radius: 11px;
+}
+
+.process-number {
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.process-card h3 {
+    margin: 24px 0 7px;
+    font-size: 15px;
+}
+
+.process-card p {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* =========================
+   CTA
+========================= */
+
+.cta {
+    width: min(1180px, calc(100% - 48px));
+    margin: 20px auto 70px;
+    padding: 55px;
+    background: #dfc27f;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+
+.cta h2 {
+    font-family: "DM Serif Display", serif;
+    font-size: 42px;
+    line-height: 1;
+    font-weight: 400;
+    max-width: 570px;
+}
+
+.cta p {
+    max-width: 550px;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.cta button {
+    white-space: nowrap;
+    border: 0;
+    background: var(--ink);
+    color: white;
+    padding: 15px 23px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer {
+    background: var(--ink);
+    color: white;
+    padding: 48px 0 25px;
+}
+
+.footer-inner {
+    width: min(1180px, calc(100% - 48px));
+    margin: auto;
+}
+
+.footer-top {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 40px;
+    padding-bottom: 35px;
+}
+
+.footer-brand p {
+    max-width: 330px;
+    color: #aaa69d;
+    font-size: 12px;
+    margin-top: 14px;
+}
+
+.footer-column h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold-light);
+    margin-bottom: 13px;
+}
+
+.footer-column a {
+    display: block;
+    color: #aaa69d;
+    font-size: 12px;
+    margin: 7px 0;
+}
+
+.footer-bottom {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,.1);
+    color: #77736b;
+    font-size: 10px;
+}
+
+/* =========================
+   CHAT LAUNCHER
+========================= */
+
+.chat-launcher {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    z-index: 2000;
+    border: 0;
+    background: var(--ink);
+    color: white;
+    border-radius: 50px;
+    padding: 13px 19px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.chat-launcher-icon {
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--ink);
+}
+
+/* =========================
+   CHAT PANEL
+========================= */
+
+.chat-panel {
+    position: fixed;
+    right: 24px;
+    bottom: 84px;
+    width: 410px;
+    height: 650px;
+    max-height: calc(100vh - 105px);
+    background: #171715;
+    color: white;
+    border-radius: 15px;
+    z-index: 1999;
+    box-shadow: 0 25px 70px rgba(0,0,0,.3);
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+}
+
+.chat-panel.active {
+    display: flex;
+}
+
+.chat-header {
+    padding: 19px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-avatar {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    place-items: center;
+    background: var(--gold);
+    color: var(--ink);
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+.chat-title strong {
+    display: block;
+    font-size: 13px;
+}
+
+.chat-title span {
+    color: #89867f;
+    font-size: 10px;
+}
+
+.close-chat {
+    border: 0;
+    background: transparent;
+    color: #aaa69d;
+    font-size: 21px;
+}
+
+.chat-progress {
+    padding: 11px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    color: #aaa69d;
+    font-size: 9px;
+    margin-bottom: 6px;
+}
+
+.progress-track {
+    height: 4px;
+    background: #30302d;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--gold);
+    transition: .3s;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 17px;
+}
+
+.message {
+    max-width: 82%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.message.bot {
+    background: #242421;
+    color: #ddd9d0;
+    border-bottom-left-radius: 3px;
+}
+
+.message.user {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--ink);
+    border-bottom-right-radius: 3px;
+}
+
+.quick-actions {
+    padding: 0 17px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.quick-btn {
+    border: 1px solid rgba(255,255,255,.1);
+    background: #232320;
+    color: #c9c5bc;
+    padding: 7px 10px;
+    border-radius: 20px;
+    font-size: 9px;
+}
+
+.image-preview {
+    display: none;
+    padding: 8px 15px;
+    gap: 7px;
+    overflow-x: auto;
+}
+
+.preview-item {
+    width: 55px;
+    height: 55px;
+    flex: 0 0 auto;
+    position: relative;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.chat-input-area {
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 11px;
+}
+
+.chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #232320;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.chat-input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: white;
+    padding: 8px;
+    font-size: 12px;
+}
+
+.chat-input::placeholder {
+    color: #77736b;
+}
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    background: transparent;
+    color: #aaa69d;
+    border-radius: 6px;
+}
+
+.icon-btn:hover {
+    background: #30302d;
+    color: white;
+}
+
+.send-btn {
+    background: var(--gold);
+    color: var(--ink);
+}
+
+.chat-status {
+    color: #77736b;
+    font-size: 9px;
+    padding: 7px 3px 0;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1000px) {
+
+    .hero {
+        grid-template-columns: 1fr;
+        padding-top: 40px;
+    }
+
+    .hero-visual {
+        margin-top: 5px;
+    }
+
+    .search-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .search-btn {
+        min-height: 48px;
+    }
+
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .property-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .process-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ai-card {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-visual {
+        min-height: 300px;
+    }
+
+    .footer-top {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-inner {
+        width: min(100% - 28px, 1180px);
+    }
+
+    .hero,
+    .section,
+    .ai-section,
+    .properties-inner,
+    .cta,
+    .search-wrap {
+        width: calc(100% - 28px);
+    }
+
+    .hero {
+        padding-top: 32px;
+        min-height: auto;
+    }
+
+    .hero h1 {
+        font-size: 49px;
+    }
+
+    .hero-image {
+        height: 370px;
+    }
+
+    .hero-card {
+        left: 15px;
+        bottom: 15px;
+    }
+
+    .search-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .search-btn {
+        grid-column: 1 / -1;
+    }
+
+    .category-grid,
+    .property-grid,
+    .process-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-heading {
+        display: block;
+    }
+
+    .section-heading p {
+        margin-top: 12px;
+    }
+
+    .ai-copy {
+        padding: 35px 25px;
+    }
+
+    .ai-copy h2 {
+        font-size: 39px;
+    }
+
+    .ai-points {
+        grid-template-columns: 1fr;
+    }
+
+    .cta {
+        padding: 35px 25px;
+        display: block;
+    }
+
+    .cta h2 {
+        font-size: 36px;
+    }
+
+    .cta button {
+        margin-top: 22px;
+    }
+
+    .footer-top {
+        grid-template-columns: 1fr;
+    }
+
+    .chat-panel {
+        right: 10px;
+        left: 10px;
+        bottom: 76px;
+        width: auto;
+        height: min(650px, calc(100vh - 95px));
+    }
+
+    .chat-launcher {
+        right: 15px;
+        bottom: 15px;
+    }
+}
+</style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- NAVIGATION -->
+<header class="navbar">
+    <div class="nav-inner">
 
-    <!-- HEADER -->
+        <a href="#" class="logo">
+            <div class="logo-mark">P</div>
+            <div class="logo-text">
+                Property<span>Pilot</span> AI
+            </div>
+        </a>
 
-    <header>
+        <nav class="nav-links">
+            <a href="#properties">Properties</a>
+            <a href="#categories">Explore</a>
+            <a href="#ai">AI Assistant</a>
+            <a href="#process">How It Works</a>
+        </nav>
 
-        <div class="brand">
+        <button class="nav-cta" onclick="openChat()">
+            Talk to AI
+        </button>
 
-            <div class="logo">
-                P
+    </div>
+</header>
+
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="eyebrow">
+            AI-Powered Property Search
+        </div>
+
+        <h1>
+            Find a place that
+            <span>feels right.</span>
+        </h1>
+
+        <p class="hero-text">
+            PropertyPilot AI helps you discover properties based on your
+            needs, budget, location and lifestyle — through one simple
+            conversation.
+        </p>
+
+        <div class="hero-actions">
+            <button class="primary-btn" onclick="openChat()">
+                Find My Property
+            </button>
+
+            <a href="#properties" class="secondary-btn">
+                Explore Properties
+            </a>
+        </div>
+
+        <div class="hero-stats">
+
+            <div class="stat">
+                <strong>AI</strong>
+                <span>Property Matching</span>
             </div>
 
-            <div class="brand-text">
+            <div class="stat">
+                <strong>24/7</strong>
+                <span>Digital Assistant</span>
+            </div>
 
-                <h1>
-                    Property<span>Pilot</span> AI
-                </h1>
+            <div class="stat">
+                <strong>1:1</strong>
+                <span>Guided Search</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="hero-visual">
+
+        <img
+            class="hero-image"
+            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85"
+            alt="Modern luxury home"
+        >
+
+        <div class="hero-card">
+
+            <div class="hero-card-label">
+                AI Recommendation
+            </div>
+
+            <h3>
+                Your next home.
+            </h3>
+
+            <p>
+                Tell PropertyPilot what you need and let AI guide your search.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- SEARCH -->
+<div class="search-wrap">
+
+    <div class="search-card">
+
+        <div class="search-heading">
+
+            <h2>
+                Start your property search
+            </h2>
+
+            <span>
+                Powered by PropertyPilot AI
+            </span>
+
+        </div>
+
+        <div class="search-grid">
+
+            <div class="search-field">
+                <label>Purpose</label>
+                <select id="searchPurpose">
+                    <option value="">Any</option>
+                    <option value="buy">Buy</option>
+                    <option value="rent">Rent</option>
+                </select>
+            </div>
+
+            <div class="search-field">
+                <label>Location</label>
+                <input id="searchLocation" placeholder="e.g. Uyo">
+            </div>
+
+            <div class="search-field">
+                <label>Property</label>
+                <select id="searchType">
+                    <option value="">Any type</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="land">Land</option>
+                    <option value="duplex">Duplex</option>
+                </select>
+            </div>
+
+            <div class="search-field">
+                <label>Bedrooms</label>
+                <select id="searchBedrooms">
+                    <option value="">Any</option>
+                    <option value="2 bedrooms">2+</option>
+                    <option value="3 bedrooms">3+</option>
+                    <option value="4 bedrooms">4+</option>
+                    <option value="5 bedrooms">5+</option>
+                </select>
+            </div>
+
+            <div class="search-field">
+                <label>Budget</label>
+                <input id="searchBudget" placeholder="e.g. ₦50m">
+            </div>
+
+            <button class="search-btn" onclick="startSearch()">
+                Search
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- CATEGORIES -->
+<section class="section" id="categories">
+
+    <div class="section-heading">
+
+        <div>
+            <div class="eyebrow">Explore</div>
+
+            <h2>
+                Find what fits your life.
+            </h2>
+        </div>
+
+        <p>
+            Explore different property categories or let PropertyPilot
+            narrow the options down for you.
+        </p>
+
+    </div>
+
+
+    <div class="category-grid">
+
+        <div class="category">
+            <div class="category-icon">⌂</div>
+            <div>
+                <h3>Homes</h3>
+                <p>Comfortable houses for everyday living.</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-icon">▦</div>
+            <div>
+                <h3>Apartments</h3>
+                <p>Modern apartments in convenient locations.</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-icon">◇</div>
+            <div>
+                <h3>Luxury</h3>
+                <p>Premium residences with exceptional finishes.</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-icon">◈</div>
+            <div>
+                <h3>Land</h3>
+                <p>Land opportunities for future development.</p>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- PROPERTIES -->
+<section class="properties-section" id="properties">
+
+    <div class="properties-inner">
+
+        <div class="section-heading">
+
+            <div>
+                <div class="eyebrow">Featured</div>
+
+                <h2>
+                    Properties worth exploring.
+                </h2>
+            </div>
+
+            <p>
+                A glimpse of the kinds of properties PropertyPilot can help
+                you discover.
+            </p>
+
+        </div>
+
+
+        <div class="property-grid">
+
+            <article class="property-card">
+
+                <img
+                    class="property-image"
+                    src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=85"
+                    alt="Modern house"
+                >
+
+                <div class="property-info">
+
+                    <div class="property-top">
+                        <h3>Modern Residence</h3>
+                        <div class="property-price">₦85M</div>
+                    </div>
+
+                    <div class="property-location">
+                        Uyo, Akwa Ibom
+                    </div>
+
+                    <div class="property-meta">
+                        <span>4 Beds</span>
+                        <span>4 Baths</span>
+                        <span>2,100 sqft</span>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="property-card">
+
+                <img
+                    class="property-image"
+                    src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=85"
+                    alt="Luxury interior"
+                >
+
+                <div class="property-info">
+
+                    <div class="property-top">
+                        <h3>Luxury Duplex</h3>
+                        <div class="property-price">₦120M</div>
+                    </div>
+
+                    <div class="property-location">
+                        Lagos, Nigeria
+                    </div>
+
+                    <div class="property-meta">
+                        <span>5 Beds</span>
+                        <span>5 Baths</span>
+                        <span>3,400 sqft</span>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="property-card">
+
+                <img
+                    class="property-image"
+                    src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=85"
+                    alt="Contemporary home"
+                >
+
+                <div class="property-info">
+
+                    <div class="property-top">
+                        <h3>Contemporary Home</h3>
+                        <div class="property-price">₦65M</div>
+                    </div>
+
+                    <div class="property-location">
+                        Abuja, Nigeria
+                    </div>
+
+                    <div class="property-meta">
+                        <span>3 Beds</span>
+                        <span>3 Baths</span>
+                        <span>1,850 sqft</span>
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- AI SECTION -->
+<section class="ai-section" id="ai">
+
+    <div class="ai-card">
+
+        <div class="ai-copy">
+
+            <div class="eyebrow">
+                Meet PropertyPilot
+            </div>
+
+            <h2>
+                Your property search, guided by AI.
+            </h2>
+
+            <p>
+                Instead of scrolling endlessly through listings, simply
+                describe what you need. PropertyPilot asks the right
+                questions and builds a clearer picture of your ideal property.
+            </p>
+
+            <div class="ai-points">
+
+                <div class="ai-point">
+                    <strong>Understands your needs</strong>
+                    Location, purpose, property type and more.
+                </div>
+
+                <div class="ai-point">
+                    <strong>Understands your budget</strong>
+                    Find options within your financial range.
+                </div>
+
+                <div class="ai-point">
+                    <strong>Guided conversation</strong>
+                    No complicated search forms.
+                </div>
+
+                <div class="ai-point">
+                    <strong>Human-ready leads</strong>
+                    Your requirements can reach the property team.
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="ai-visual"></div>
+
+    </div>
+
+</section>
+
+
+<!-- PROCESS -->
+<section class="section" id="process">
+
+    <div class="section-heading">
+
+        <div>
+            <div class="eyebrow">Simple Process</div>
+
+            <h2>
+                From conversation to property.
+            </h2>
+        </div>
+
+        <p>
+            PropertyPilot makes the first stage of your property journey
+            simple, personal and conversational.
+        </p>
+
+    </div>
+
+
+    <div class="process-grid">
+
+        <div class="process-card">
+
+            <div class="process-number">01</div>
+
+            <h3>Tell us what you need</h3>
+
+            <p>
+                Start a conversation and describe the kind of property
+                you're looking for.
+            </p>
+
+        </div>
+
+
+        <div class="process-card">
+
+            <div class="process-number">02</div>
+
+            <h3>Answer a few questions</h3>
+
+            <p>
+                PropertyPilot collects the details needed to understand
+                your requirements.
+            </p>
+
+        </div>
+
+
+        <div class="process-card">
+
+            <div class="process-number">03</div>
+
+            <h3>Share property images</h3>
+
+            <p>
+                Upload property images when useful to help communicate
+                what you're looking for.
+            </p>
+
+        </div>
+
+
+        <div class="process-card">
+
+            <div class="process-number">04</div>
+
+            <h3>Connect with the team</h3>
+
+            <p>
+                Your completed property request can be processed for
+                follow-up.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- CTA -->
+<section class="cta">
+
+    <div>
+
+        <h2>
+            Your next property could start with one conversation.
+        </h2>
+
+        <p>
+            Tell PropertyPilot what you're looking for and begin your
+            property search today.
+        </p>
+
+    </div>
+
+    <button onclick="openChat()">
+        Talk to PropertyPilot
+    </button>
+
+</section>
+
+</main>
+
+
+<!-- FOOTER -->
+<footer>
+
+    <div class="footer-inner">
+
+        <div class="footer-top">
+
+            <div class="footer-brand">
+
+                <a href="#" class="logo">
+                    <div class="logo-mark">P</div>
+                    <div class="logo-text">
+                        Property<span>Pilot</span> AI
+                    </div>
+                </a>
 
                 <p>
-                    SMART REAL ESTATE ASSISTANT
+                    An AI-powered property discovery experience designed
+                    to make finding your next property simpler.
                 </p>
 
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Explore</h4>
+
+                <a href="#properties">Properties</a>
+                <a href="#categories">Categories</a>
+                <a href="#ai">AI Assistant</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Company</h4>
+
+                <a href="#process">How It Works</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>PropertyPilot</h4>
+
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Support</a>
+
+            </div>
+
+        </div>
+
+
+        <div class="footer-bottom">
+            © 2026 PropertyPilot AI. All rights reserved.
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- FLOATING CHAT LAUNCHER -->
+
+<button
+    class="chat-launcher"
+    id="chatLauncher"
+    onclick="openChat()"
+>
+
+    <span class="chat-launcher-icon">✦</span>
+
+    Talk to AI
+
+</button>
+
+
+<!-- CHAT PANEL -->
+
+<div class="chat-panel" id="chatPanel">
+
+    <div class="chat-header">
+
+        <div class="chat-title">
+
+            <div class="chat-avatar">P</div>
+
+            <div>
+                <strong>PropertyPilot AI</strong>
+                <span>Your property assistant</span>
             </div>
 
         </div>
 
         <button
-            class="new-chat"
-            id="newChatButton"
+            class="close-chat"
+            onclick="closeChat()"
         >
-            + New Chat
+            ×
         </button>
 
-    </header>
+    </div>
 
 
-    <!-- HERO -->
+    <div class="chat-progress">
 
-    <section class="hero">
+        <div class="progress-label">
 
-        <div class="eyebrow">
-            PROPERTY DISCOVERY, SIMPLIFIED
-        </div>
+            <span id="progressText">
+                Let's get started
+            </span>
 
-        <h2>
-            Your next property starts
-            <span>with a conversation.</span>
-        </h2>
-
-        <p>
-            Tell PropertyPilot what you are looking for and our smart
-            real estate assistant will guide you through the process.
-        </p>
-
-    </section>
-
-
-    <!-- CHAT -->
-
-    <main class="chat-wrapper">
-
-        <!-- PROGRESS -->
-
-        <div class="progress-area">
-
-            <div class="progress-info">
-
-                <span>
-                    Lead profile progress
-                </span>
-
-                <span id="progressText">
-                    0 / 8
-                </span>
-
-            </div>
-
-            <div class="progress-bar">
-
-                <div
-                    class="progress-fill"
-                    id="progressFill"
-                ></div>
-
-            </div>
+            <span id="progressPercent">
+                0%
+            </span>
 
         </div>
 
-
-        <!-- MESSAGES -->
-
-        <div
-            class="chat-box"
-            id="chatBox"
-        >
-
-            <div class="message assistant">
-
-                <span class="label">
-                    PROPERTY PILOT AI
-                </span>
-
-                Welcome! I'm your PropertyPilot real estate assistant.
-                I'll ask you a few simple questions so I can understand
-                exactly what you're looking for.
-
-            </div>
-
-        </div>
-
-
-        <!-- TYPING -->
-
-        <div
-            class="typing"
-            id="typingRow"
-            style="margin: 0 22px 15px;"
-        >
-
-            <span></span>
-            <span></span>
-            <span></span>
-
-        </div>
-
-
-        <!-- QUICK ACTIONS -->
-
-        <div class="quick-actions">
-
-            <button
-                class="quick-btn"
-                data-message="I want to buy"
-            >
-                Buy
-            </button>
-
-            <button
-                class="quick-btn"
-                data-message="I want to rent"
-            >
-                Rent
-            </button>
-
-            <button
-                class="quick-btn"
-                data-message="I want to invest"
-            >
-                Invest
-            </button>
-
-            <button
-                class="quick-btn"
-                data-message="House"
-            >
-                House
-            </button>
-
-            <button
-                class="quick-btn"
-                data-message="Apartment"
-            >
-                Apartment
-            </button>
-
-            <button
-                class="quick-btn"
-                data-message="Land"
-            >
-                Land
-            </button>
-
-        </div>
-
-
-        <!-- INPUT AREA -->
-
-        <div class="input-area">
-
-            <!-- IMAGE PREVIEW -->
+        <div class="progress-track">
 
             <div
-                class="image-preview-area"
-                id="imagePreviewArea"
-            >
-
-                <div class="image-preview-title">
-                    PROPERTY IMAGES
-                </div>
-
-                <div
-                    class="image-preview-list"
-                    id="imagePreviewList"
-                ></div>
-
-                <div
-                    class="upload-status"
-                    id="uploadStatus"
-                ></div>
-
-            </div>
-
-
-            <div class="input-row">
-
-                <!-- HIDDEN FILE INPUT -->
-
-                <input
-                    type="file"
-                    id="imageInput"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                >
-
-
-                <!-- UPLOAD BUTTON -->
-
-                <button
-                    type="button"
-                    id="uploadButton"
-                    aria-label="Upload property images"
-                    title="Upload property images"
-                >
-                    📎
-                </button>
-
-
-                <!-- MESSAGE INPUT -->
-
-                <input
-                    type="text"
-                    id="messageInput"
-                    placeholder="Type your message..."
-                    autocomplete="off"
-                >
-
-
-                <!-- SEND BUTTON -->
-
-                <button
-                    type="button"
-                    id="sendButton"
-                    aria-label="Send message"
-                >
-                    ➤
-                </button>
-
-            </div>
-
-
-            <div
-                class="status"
-                id="status"
+                class="progress-fill"
+                id="progressFill"
             ></div>
 
         </div>
 
-    </main>
+    </div>
 
 
-    <footer>
-        Powered by <span>PropertyPilot AI</span>
-    </footer>
+    <div
+        class="chat-messages"
+        id="chatMessages"
+    ></div>
+
+
+    <div
+        class="quick-actions"
+        id="quickActions"
+    >
+
+        <button
+            class="quick-btn"
+            onclick="quickMessage('I want to buy a property')"
+        >
+            Buy
+        </button>
+
+        <button
+            class="quick-btn"
+            onclick="quickMessage('I want to rent a property')"
+        >
+            Rent
+        </button>
+
+        <button
+            class="quick-btn"
+            onclick="quickMessage('I am looking for a house')"
+        >
+            House
+        </button>
+
+        <button
+            class="quick-btn"
+            onclick="quickMessage('I am looking for an apartment')"
+        >
+            Apartment
+        </button>
+
+    </div>
+
+
+    <div
+        class="image-preview"
+        id="imagePreview"
+    ></div>
+
+
+    <div class="chat-input-area">
+
+        <div class="chat-input-row">
+
+            <input
+                type="text"
+                id="messageInput"
+                class="chat-input"
+                placeholder="Tell me what you're looking for..."
+                autocomplete="off"
+            >
+
+            <button
+                class="icon-btn"
+                id="uploadButton"
+                title="Upload property image"
+            >
+                ＋
+            </button>
+
+            <button
+                class="icon-btn send-btn"
+                id="sendButton"
+                title="Send"
+            >
+                ➤
+            </button>
+
+        </div>
+
+        <div
+            class="chat-status"
+            id="chatStatus"
+        >
+            PropertyPilot AI is ready.
+        </div>
+
+    </div>
 
 </div>
 
 
+<input
+    type="file"
+    id="imageInput"
+    accept="image/jpeg,image/png,image/webp"
+    multiple
+    hidden
+>
+
+
 <script>
 
-    /* =====================================================
-       PROPERTY PILOT AI
-       PRODUCTION API CONFIGURATION
-       ===================================================== */
+/* =========================
+   API CONFIGURATION
+========================= */
 
-    const API_BASE_URL =
-        "https://propertypilot-ai-5yai.onrender.com";
+const API_BASE_URL =
+    "http://127.0.0.1:8000";
 
-    const CHAT_API_URL =
-        API_BASE_URL +
-        "/api/v1/chat";
+const CHAT_API_URL =
+    API_BASE_URL + "/api/v1/chat";
 
-    const UPLOAD_API_URL =
-        API_BASE_URL +
-        "/api/v1/upload";
+const UPLOAD_API_URL =
+    API_BASE_URL + "/api/v1/upload-image";
 
-    const SESSION_KEY =
-        "propertypilot_session";
+const SESSION_KEY =
+    "propertypilot_session";
 
-    const TOTAL_FIELDS = 8;
+const TOTAL_FIELDS =
+    8;
 
-    const MAX_IMAGES = 10;
+const MAX_IMAGES =
+    10;
 
-    const MAX_IMAGE_SIZE =
-        10 * 1024 * 1024;
+const MAX_IMAGE_SIZE =
+    20 * 1024 * 1024;
 
 
-    /* =====================================================
-       ELEMENTS
-       ===================================================== */
+/* =========================
+   STATE
+========================= */
 
-    const chatBox =
-        document.getElementById(
-            "chatBox"
-        );
+let sessionId =
+    localStorage.getItem(SESSION_KEY);
 
-    const messageInput =
-        document.getElementById(
-            "messageInput"
-        );
+if (!sessionId) {
 
-    const sendButton =
-        document.getElementById(
-            "sendButton"
-        );
+    sessionId =
+        "propertypilot-" +
+        Date.now() +
+        "-" +
+        Math.random()
+            .toString(36)
+            .substring(2, 8);
 
-    const newChatButton =
-        document.getElementById(
-            "newChatButton"
-        );
-
-    const progressFill =
-        document.getElementById(
-            "progressFill"
-        );
-
-    const progressText =
-        document.getElementById(
-            "progressText"
-        );
-
-    const statusElement =
-        document.getElementById(
-            "status"
-        );
-
-    const uploadButton =
-        document.getElementById(
-            "uploadButton"
-        );
-
-    const imageInput =
-        document.getElementById(
-            "imageInput"
-        );
-
-    const imagePreviewArea =
-        document.getElementById(
-            "imagePreviewArea"
-        );
-
-    const imagePreviewList =
-        document.getElementById(
-            "imagePreviewList"
-        );
-
-    const uploadStatus =
-        document.getElementById(
-            "uploadStatus"
-        );
-
-
-    let typingRow =
-        document.getElementById(
-            "typingRow"
-        );
-
-
-    /* =====================================================
-       IMAGE STATE
-       ===================================================== */
-
-    let selectedImages = [];
-
-    let uploadedImages = [];
-
-
-    /* =====================================================
-       SESSION
-       ===================================================== */
-
-    function createSessionId() {
-
-        return (
-            "pp-" +
-            Date.now().toString() +
-            "-" +
-            Math.random()
-                .toString(36)
-                .substring(2, 10)
-        );
-
-    }
-
-
-    function getSessionId() {
-
-        let sessionId =
-            localStorage.getItem(
-                SESSION_KEY
-            );
-
-        if (!sessionId) {
-
-            sessionId =
-                createSessionId();
-
-            localStorage.setItem(
-                SESSION_KEY,
-                sessionId
-            );
-
-        }
-
-        return sessionId;
-
-    }
-
-
-    let sessionId =
-        getSessionId();
-
-
-    /* =====================================================
-       UI HELPERS
-       ===================================================== */
-
-    function scrollToBottom() {
-
-        chatBox.scrollTop =
-            chatBox.scrollHeight;
-
-    }
-
-
-    function addMessage(
-        text,
-        type = "assistant"
-    ) {
-
-        const message =
-            document.createElement(
-                "div"
-            );
-
-        message.className =
-            "message " + type;
-
-        const label =
-            type === "user"
-                ? "YOU"
-                : "PROPERTY PILOT AI";
-
-        message.innerHTML =
-            `
-            <span class="label">
-                ${label}
-            </span>
-            ${escapeHtml(text)}
-            `;
-
-        chatBox.appendChild(
-            message
-        );
-
-        scrollToBottom();
-
-    }
-
-
-    function addImageMessage(
-        images
-    ) {
-
-        if (!images || !images.length) {
-            return;
-        }
-
-        const message =
-            document.createElement(
-                "div"
-            );
-
-        message.className =
-            "message user";
-
-        const label =
-            document.createElement(
-                "span"
-            );
-
-        label.className =
-            "label";
-
-        label.textContent =
-            "YOU";
-
-        message.appendChild(
-            label
-        );
-
-
-        const grid =
-            document.createElement(
-                "div"
-            );
-
-        grid.className =
-            "image-message-grid";
-
-
-        images.forEach(
-            function (image) {
-
-                const img =
-                    document.createElement(
-                        "img"
-                    );
-
-                img.src =
-                    image.url;
-
-                img.alt =
-                    image.filename ||
-                    "Property image";
-
-                img.loading =
-                    "lazy";
-
-                grid.appendChild(
-                    img
-                );
-
-            }
-        );
-
-
-        message.appendChild(
-            grid
-        );
-
-        chatBox.appendChild(
-            message
-        );
-
-        scrollToBottom();
-
-    }
-
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement(
-                "div"
-            );
-
-        div.textContent =
-            value;
-
-        return div.innerHTML;
-
-    }
-
-
-    function showTyping() {
-
-        typingRow.style.display =
-            "block";
-
-        scrollToBottom();
-
-    }
-
-
-    function hideTyping() {
-
-        typingRow.style.display =
-            "none";
-
-    }
-
-
-    function setStatus(
-        message = "",
-        type = ""
-    ) {
-
-        statusElement.textContent =
-            message;
-
-        statusElement.className =
-            "status " + type;
-
-    }
-
-
-    function updateProgress(
-        completedCount
-    ) {
-
-        const safeCount =
-            Math.max(
-                0,
-                Math.min(
-                    TOTAL_FIELDS,
-                    Number(
-                        completedCount
-                    ) || 0
-                )
-            );
-
-        const percentage =
-            (
-                safeCount /
-                TOTAL_FIELDS
-            ) * 100;
-
-        progressFill.style.width =
-            percentage + "%";
-
-        progressText.textContent =
-            safeCount +
-            " / " +
-            TOTAL_FIELDS;
-
-    }
-
-
-    /* =====================================================
-       IMAGE PREVIEW
-       ===================================================== */
-
-    function renderImagePreviews() {
-
-        imagePreviewList.innerHTML =
-            "";
-
-        if (
-            selectedImages.length === 0
-        ) {
-
-            imagePreviewArea.style.display =
-                "none";
-
-            return;
-
-        }
-
-
-        imagePreviewArea.style.display =
-            "block";
-
-
-        selectedImages.forEach(
-            function (file, index) {
-
-                const preview =
-                    document.createElement(
-                        "div"
-                    );
-
-                preview.className =
-                    "preview-item";
-
-
-                const img =
-                    document.createElement(
-                        "img"
-                    );
-
-
-                const objectUrl =
-                    URL.createObjectURL(
-                        file
-                    );
-
-                img.src =
-                    objectUrl;
-
-                img.alt =
-                    file.name;
-
-
-                img.onload =
-                    function () {
-
-                        URL.revokeObjectURL(
-                            objectUrl
-                        );
-
-                    };
-
-
-                const removeButton =
-                    document.createElement(
-                        "button"
-                    );
-
-                removeButton.type =
-                    "button";
-
-                removeButton.className =
-                    "preview-remove";
-
-                removeButton.textContent =
-                    "×";
-
-                removeButton.title =
-                    "Remove image";
-
-
-                removeButton.addEventListener(
-                    "click",
-                    function () {
-
-                        selectedImages.splice(
-                            index,
-                            1
-                        );
-
-                        renderImagePreviews();
-
-                    }
-                );
-
-
-                preview.appendChild(
-                    img
-                );
-
-                preview.appendChild(
-                    removeButton
-                );
-
-                imagePreviewList.appendChild(
-                    preview
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       IMAGE VALIDATION
-       ===================================================== */
-
-    function validateImage(
-        file
-    ) {
-
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-        ];
-
-
-        if (
-            !allowedTypes.includes(
-                file.type
-            )
-        ) {
-
-            return (
-                file.name +
-                " is not supported. " +
-                "Please use JPG, PNG, or WebP."
-            );
-
-        }
-
-
-        if (
-            file.size >
-            MAX_IMAGE_SIZE
-        ) {
-
-            return (
-                file.name +
-                " is larger than 10 MB."
-            );
-
-        }
-
-
-        return null;
-
-    }
-
-
-    /* =====================================================
-       SELECT IMAGES
-       ===================================================== */
-
-    uploadButton.addEventListener(
-        "click",
-        function () {
-
-            imageInput.click();
-
-        }
+    localStorage.setItem(
+        SESSION_KEY,
+        sessionId
     );
+}
+
+let selectedImages = [];
+
+let chatStarted = false;
 
 
-    imageInput.addEventListener(
-        "change",
-        function () {
+/* =========================
+   ELEMENTS
+========================= */
 
-            const files =
-                Array.from(
-                    imageInput.files
-                );
+const chatPanel =
+    document.getElementById("chatPanel");
 
+const chatMessages =
+    document.getElementById("chatMessages");
 
-            if (!files.length) {
-                return;
-            }
+const messageInput =
+    document.getElementById("messageInput");
 
+const sendButton =
+    document.getElementById("sendButton");
 
-            if (
-                selectedImages.length +
-                files.length >
-                MAX_IMAGES
-            ) {
+const uploadButton =
+    document.getElementById("uploadButton");
 
-                setStatus(
-                    "You can upload a maximum of " +
-                    MAX_IMAGES +
-                    " images.",
-                    "error"
-                );
+const imageInput =
+    document.getElementById("imageInput");
 
-                imageInput.value =
-                    "";
+const imagePreview =
+    document.getElementById("imagePreview");
 
-                return;
+const chatStatus =
+    document.getElementById("chatStatus");
 
-            }
+const progressFill =
+    document.getElementById("progressFill");
 
+const progressText =
+    document.getElementById("progressText");
 
-            for (
-                const file
-                of files
-            ) {
-
-                const error =
-                    validateImage(
-                        file
-                    );
+const progressPercent =
+    document.getElementById("progressPercent");
 
 
-                if (error) {
+/* =========================
+   CHAT OPEN / CLOSE
+========================= */
 
-                    setStatus(
-                        error,
-                        "error"
-                    );
+function openChat() {
 
-                    continue;
+    chatPanel.classList.add("active");
 
-                }
+    if (!chatStarted) {
 
+        chatStarted = true;
 
-                selectedImages.push(
-                    file
-                );
-
-            }
-
-
-            renderImagePreviews();
-
-            imageInput.value =
-                "";
-
-            setStatus("");
-
-        }
-    );
-
-
-    /* =====================================================
-       UPLOAD SELECTED IMAGES
-       ===================================================== */
-
-    async function uploadSelectedImages() {
-
-        if (
-            selectedImages.length === 0
-        ) {
-
-            return [];
-
-        }
-
-
-        uploadButton.disabled =
-            true;
-
-        sendButton.disabled =
-            true;
-
-
-        uploadStatus.textContent =
-            "Uploading property images...";
-
-
-        const formData =
-            new FormData();
-
-
-        formData.append(
-            "session_id",
-            sessionId
+        addMessage(
+            "Hello! I'm your PropertyPilot AI assistant. What are you looking for today?",
+            "bot"
         );
-
-
-        selectedImages.forEach(
-            function (file) {
-
-                formData.append(
-                    "files",
-                    file
-                );
-
-            }
-        );
-
-
-        try {
-
-            const response =
-                await fetch(
-                    UPLOAD_API_URL,
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
-
-
-            let data = null;
-
-
-            try {
-
-                data =
-                    await response.json();
-
-            } catch (error) {
-
-                throw new Error(
-                    "The upload server returned an invalid response."
-                );
-
-            }
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data?.detail ||
-                    "Image upload failed."
-                );
-
-            }
-
-
-            uploadedImages =
-                data.property_images ||
-                data.images ||
-                [];
-
-
-            selectedImages = [];
-
-
-            renderImagePreviews();
-
-
-            uploadStatus.textContent =
-                uploadedImages.length +
-                " image(s) uploaded successfully.";
-
-
-            addImageMessage(
-                uploadedImages
-            );
-
-
-            setStatus(
-                "Property images uploaded successfully.",
-                "success"
-            );
-
-
-            return uploadedImages;
-
-        } catch (error) {
-
-            console.error(
-                "Image upload error:",
-                error
-            );
-
-
-            uploadStatus.textContent =
-                "";
-
-
-            setStatus(
-                error.message ||
-                "Could not upload the images.",
-                "error"
-            );
-
-
-            return [];
-
-        } finally {
-
-            uploadButton.disabled =
-                false;
-
-            sendButton.disabled =
-                false;
-
-        }
-
     }
 
-
-    /* =====================================================
-       SEND MESSAGE
-       ===================================================== */
-
-    async function sendMessage(
-        messageOverride = null
-    ) {
-
-        const message =
-            (
-                messageOverride !== null
-                    ? messageOverride
-                    : messageInput.value
-            ).trim();
+    setTimeout(() => {
+        messageInput.focus();
+    }, 100);
+}
 
 
-        /*
-         * If the user selected images,
-         * upload them first.
-         */
+function closeChat() {
 
-        if (
-            selectedImages.length > 0
-        ) {
-
-            const images =
-                await uploadSelectedImages();
+    chatPanel.classList.remove("active");
+}
 
 
-            /*
-             * If the user only selected
-             * images and did not type text,
-             * stop here.
-             */
+/* =========================
+   MESSAGES
+========================= */
 
-            if (!message) {
+function addMessage(
+    text,
+    sender
+) {
 
-                messageInput.focus();
+    const message =
+        document.createElement("div");
 
-                return;
+    message.className =
+        "message " + sender;
 
-            }
+    message.textContent =
+        text;
 
-        }
+    chatMessages.appendChild(message);
+
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
+}
 
 
-        if (!message) {
-            return;
-        }
+function setStatus(text) {
 
+    chatStatus.textContent =
+        text;
+}
+
+
+/* =========================
+   QUICK ACTIONS
+========================= */
+
+function quickMessage(text) {
+
+    messageInput.value =
+        text;
+
+    sendMessage();
+}
+
+
+/* =========================
+   SEND MESSAGE
+========================= */
+
+async function sendMessage() {
+
+    const message =
+        messageInput.value.trim();
+
+    if (!message && selectedImages.length === 0) {
+        return;
+    }
+
+    if (message) {
 
         addMessage(
             message,
             "user"
         );
 
+        messageInput.value = "";
+    }
 
-        messageInput.value =
-            "";
+    setStatus(
+        "PropertyPilot is thinking..."
+    );
+
+    sendButton.disabled = true;
+
+    try {
+
+        /* Upload images first */
+
+        if (selectedImages.length > 0) {
+
+            for (
+                const image of selectedImages
+            ) {
+
+                await uploadImage(image);
+            }
+
+            selectedImages = [];
+
+            renderImagePreview();
+        }
 
 
-        sendButton.disabled =
-            true;
+        /* Send text */
 
-
-        uploadButton.disabled =
-            true;
-
-
-        setStatus(
-            "Connecting to PropertyPilot..."
-        );
-
-
-        showTyping();
-
-
-        try {
+        if (message) {
 
             const response =
                 await fetch(
@@ -1726,407 +2089,471 @@
                                 "application/json"
                         },
 
-                        body:
-                            JSON.stringify({
+                        body: JSON.stringify({
+                            session_id:
+                                sessionId,
 
-                                session_id:
-                                    sessionId,
-
-                                message:
-                                    message
-
-                            })
-
+                            message:
+                                message
+                        })
                     }
                 );
-
-
-            let data = null;
-
-
-            try {
-
-                data =
-                    await response.json();
-
-            } catch (jsonError) {
-
-                throw new Error(
-                    "The server returned an invalid response."
-                );
-
-            }
 
 
             if (!response.ok) {
 
                 throw new Error(
-                    data?.detail ||
-                    data?.message ||
-                    "The assistant could not process your message."
+                    "Chat request failed."
                 );
-
             }
 
 
-            /*
-             * Keep the session returned
-             * by the backend.
-             */
-
-            if (
-                data.session_id &&
-                data.session_id !== sessionId
-            ) {
-
-                sessionId =
-                    data.session_id;
+            const data =
+                await response.json();
 
 
-                localStorage.setItem(
-                    SESSION_KEY,
-                    sessionId
-                );
-
-            }
-
-
-            hideTyping();
-
-
-            /*
-             * Display assistant response.
-             */
-
-            if (data.reply) {
-
-                addMessage(
-                    data.reply,
-                    "assistant"
-                );
-
-            }
-
-
-            /*
-             * Update progress using
-             * the lead object returned
-             * by the current backend.
-             */
-
-            let completedCount =
-                0;
-
-
-            const lead =
-                data.lead ||
-                data.collected_data ||
-                {};
-
-
-            const fields = [
-                "name",
-                "email",
-                "phone",
-                "purpose",
-                "location",
-                "property_type",
-                "budget",
-                "timeline"
-            ];
-
-
-            completedCount =
-                fields.filter(
-                    function (field) {
-
-                        const value =
-                            lead[field];
-
-                        return (
-                            value !== null &&
-                            value !== undefined &&
-                            String(value).trim() !== ""
-                        );
-
-                    }
-                ).length;
-
-
-            updateProgress(
-                completedCount
-            );
-
-
-            /*
-             * Keep backend-uploaded images
-             * synchronized with the frontend.
-             */
-
-            if (
-                data.lead &&
-                Array.isArray(
-                    data.lead.property_images
-                )
-            ) {
-
-                uploadedImages =
-                    data.lead.property_images;
-
-            }
-
-
-            if (
-                data.completed === true ||
-                data.missing_field === null
-            ) {
-
-                setStatus(
-                    "Lead profile completed successfully.",
-                    "success"
-                );
-
-            } else {
-
-                setStatus("");
-
-            }
-
-        } catch (error) {
-
-            hideTyping();
-
-
-            console.error(
-                "PropertyPilot API error:",
-                error
-            );
+            const reply =
+                data.reply ||
+                data.response ||
+                data.message ||
+                "Thanks. Let's continue.";
 
 
             addMessage(
-                "I'm having trouble connecting to the assistant right now. Please check your internet connection and try again.",
-                "assistant"
+                reply,
+                "bot"
             );
 
 
-            setStatus(
-                "Connection problem. Please try again.",
-                "error"
-            );
-
-        } finally {
-
-            sendButton.disabled =
-                false;
-
-            uploadButton.disabled =
-                false;
-
-            messageInput.focus();
-
+            updateProgress(data);
         }
 
+
+        setStatus(
+            "PropertyPilot AI is ready."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        addMessage(
+            "I couldn't process that request right now. Please try again.",
+            "bot"
+        );
+
+        setStatus(
+            "Connection problem. Please try again."
+        );
+
+    } finally {
+
+        sendButton.disabled =
+            false;
+
+        messageInput.focus();
+    }
+}
+
+
+/* =========================
+   IMAGE UPLOAD
+========================= */
+
+async function uploadImage(file) {
+
+    if (
+        file.size >
+        MAX_IMAGE_SIZE
+    ) {
+
+        addMessage(
+            file.name +
+            " is larger than 20 MB.",
+            "bot"
+        );
+
+        return;
     }
 
 
-    /* =====================================================
-       NEW CHAT
-       ===================================================== */
+    const formData =
+        new FormData();
 
-    function resetChat() {
+    formData.append(
+        "session_id",
+        sessionId
+    );
 
-        sessionId =
-            createSessionId();
+    formData.append(
+        "file",
+        file
+    );
 
 
-        localStorage.setItem(
-            SESSION_KEY,
-            sessionId
+    const response =
+        await fetch(
+            UPLOAD_API_URL,
+            {
+                method: "POST",
+                body: formData
+            }
         );
 
 
-        selectedImages = [];
+    if (!response.ok) {
 
-        uploadedImages = [];
-
-
-        imageInput.value =
-            "";
-
-
-        imagePreviewList.innerHTML =
-            "";
+        throw new Error(
+            "Image upload failed."
+        );
+    }
 
 
-        imagePreviewArea.style.display =
-            "none";
+    const data =
+        await response.json();
 
 
-        uploadStatus.textContent =
-            "";
+    addMessage(
+        "Property image uploaded successfully.",
+        "bot"
+    );
 
 
-        chatBox.innerHTML =
-            `
-            <div class="message assistant">
-
-                <span class="label">
-                    PROPERTY PILOT AI
-                </span>
-
-                Welcome! I'm your PropertyPilot real estate assistant.
-                I'll ask you a few simple questions so I can understand
-                exactly what you're looking for.
-
-            </div>
-            `;
+    console.log(
+        "Image upload response:",
+        data
+    );
+}
 
 
-        /*
-         * Reconnect typing indicator.
-         */
+/* =========================
+   IMAGE SELECTION
+========================= */
 
-        const existingTyping =
-            document.getElementById(
-                "typingRow"
+uploadButton.addEventListener(
+    "click",
+    () => {
+        imageInput.click();
+    }
+);
+
+
+imageInput.addEventListener(
+    "change",
+    () => {
+
+        const files =
+            Array.from(
+                imageInput.files || []
             );
 
 
-        if (existingTyping) {
+        const remaining =
+            MAX_IMAGES -
+            selectedImages.length;
 
-            typingRow =
-                existingTyping;
 
-        } else {
+        const accepted =
+            files.slice(
+                0,
+                remaining
+            );
 
-            typingRow =
+
+        selectedImages.push(
+            ...accepted
+        );
+
+
+        renderImagePreview();
+
+        imageInput.value = "";
+    }
+);
+
+
+function renderImagePreview() {
+
+    imagePreview.innerHTML = "";
+
+    if (
+        selectedImages.length === 0
+    ) {
+
+        imagePreview.style.display =
+            "none";
+
+        return;
+    }
+
+
+    imagePreview.style.display =
+        "flex";
+
+
+    selectedImages.forEach(
+        (file, index) => {
+
+            const item =
                 document.createElement(
                     "div"
                 );
 
-            typingRow.id =
-                "typingRow";
-
-            typingRow.className =
-                "typing";
-
-            typingRow.style.margin =
-                "0 22px 15px";
-
-            typingRow.innerHTML =
-                `
-                <span></span>
-                <span></span>
-                <span></span>
-                `;
+            item.className =
+                "preview-item";
 
 
-            chatBox.parentNode.insertBefore(
-                typingRow,
-                chatBox.nextSibling
+            const img =
+                document.createElement(
+                    "img"
+                );
+
+
+            img.src =
+                URL.createObjectURL(
+                    file
+                );
+
+
+            item.appendChild(img);
+
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    selectedImages.splice(
+                        index,
+                        1
+                    );
+
+                    renderImagePreview();
+                }
             );
 
+
+            imagePreview.appendChild(
+                item
+            );
         }
+    );
+}
 
 
-        hideTyping();
+/* =========================
+   PROGRESS
+========================= */
 
-        updateProgress(0);
+function updateProgress(data) {
 
-        setStatus("");
-
-        messageInput.value = "";
-
-        messageInput.focus();
-
-        scrollToBottom();
-
+    if (!data) {
+        return;
     }
 
 
-    /* =====================================================
-       EVENT LISTENERS
-       ===================================================== */
-
-    sendButton.addEventListener(
-        "click",
-        function () {
-
-            sendMessage();
-
-        }
-    );
+    let completed =
+        0;
 
 
-    messageInput.addEventListener(
-        "keydown",
-        function (event) {
+    if (
+        data.lead
+    ) {
 
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
+        const lead =
+            data.lead;
 
-                event.preventDefault();
 
-                sendMessage();
+        const fields = [
+            "name",
+            "email",
+            "phone",
+            "purpose",
+            "location",
+            "property_type",
+            "budget",
+            "timeline"
+        ];
 
+
+        fields.forEach(
+            field => {
+
+                if (
+                    lead[field]
+                ) {
+
+                    completed++;
+                }
             }
-
-        }
-    );
-
-
-    newChatButton.addEventListener(
-        "click",
-        function () {
-
-            if (
-                confirm(
-                    "Start a new conversation?"
-                )
-            ) {
-
-                resetChat();
-
-            }
-
-        }
-    );
+        );
+    }
 
 
-    document
-        .querySelectorAll(".quick-btn")
-        .forEach(
-            function (button) {
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        const message =
-                            button.dataset.message;
-
-                        sendMessage(
-                            message
-                        );
-
-                    }
-                );
-
-            }
+    const percentage =
+        Math.min(
+            100,
+            Math.round(
+                completed /
+                TOTAL_FIELDS *
+                100
+            )
         );
 
 
-    /* =====================================================
-       INITIALIZATION
-       ===================================================== */
+    progressFill.style.width =
+        percentage + "%";
 
-    updateProgress(0);
 
-    messageInput.focus();
+    progressPercent.textContent =
+        percentage + "%";
+
+
+    if (
+        percentage === 100
+    ) {
+
+        progressText.textContent =
+            "Your property profile is complete.";
+
+    } else {
+
+        progressText.textContent =
+            "Building your property profile...";
+    }
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+function startSearch() {
+
+    const purpose =
+        document
+            .getElementById(
+                "searchPurpose"
+            )
+            .value;
+
+    const location =
+        document
+            .getElementById(
+                "searchLocation"
+            )
+            .value
+            .trim();
+
+    const type =
+        document
+            .getElementById(
+                "searchType"
+            )
+            .value;
+
+    const bedrooms =
+        document
+            .getElementById(
+                "searchBedrooms"
+            )
+            .value;
+
+    const budget =
+        document
+            .getElementById(
+                "searchBudget"
+            )
+            .value
+            .trim();
+
+
+    const parts = [];
+
+
+    if (purpose) {
+        parts.push(
+            "I want to " +
+            purpose +
+            " a property."
+        );
+    }
+
+
+    if (type) {
+        parts.push(
+            "I'm looking for a " +
+            type +
+            "."
+        );
+    }
+
+
+    if (bedrooms) {
+        parts.push(
+            bedrooms + "."
+        );
+    }
+
+
+    if (location) {
+        parts.push(
+            "I'm looking in " +
+            location + "."
+        );
+    }
+
+
+    if (budget) {
+        parts.push(
+            "My budget is " +
+            budget + "."
+        );
+    }
+
+
+    openChat();
+
+
+    if (
+        parts.length > 0
+    ) {
+
+        messageInput.value =
+            parts.join(" ");
+
+        sendMessage();
+    }
+}
+
+
+/* =========================
+   ENTER KEY
+========================= */
+
+messageInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+        }
+    }
+);
+
+
+sendButton.addEventListener(
+    "click",
+    sendMessage
+);
 
 </script>
 
 </body>
 </html>
+

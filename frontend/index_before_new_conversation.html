@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1723,17 +1723,6 @@ footer {
         </div>
 
         <button
-            class="new-conversation-btn"
-            id="newConversationBtn"
-            type="button"
-            onclick="startNewConversation()"
-            title="Start a new conversation"
-            aria-label="Start a new conversation"
-        >
-            ↻
-        </button>
-
-        <button
             class="close-chat"
             onclick="closeChat()"
         >
@@ -2563,36 +2552,6 @@ sendButton.addEventListener(
     sendMessage
 );
 
-</script>
-
-
-<script>
-async function startNewConversation() {
-    try {
-        const response = await fetch(
-            "http://127.0.0.1:8000/api/v1/new-session",
-            {
-                method: "POST"
-            }
-        );
-
-        const data = await response.json();
-
-        if (data.success) {
-            localStorage.setItem(
-                "propertypilot_session",
-                data.session_id
-            );
-
-            window.location.reload();
-        }
-    } catch (error) {
-        console.error(
-            "New conversation error:",
-            error
-        );
-    }
-}
 </script>
 
 </body>
