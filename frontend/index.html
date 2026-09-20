@@ -1875,7 +1875,7 @@ footer {
 ========================= */
 
 const API_BASE_URL =
-    "http://127.0.0.1:8000";
+    "https://propertypilot-ai-5yai.onrender.com";
 
 const CHAT_API_URL =
     API_BASE_URL + "/api/v1/chat";
@@ -2570,7 +2570,7 @@ sendButton.addEventListener(
 async function startNewConversation() {
     try {
         const response = await fetch(
-            "http://127.0.0.1:8000/api/v1/new-session",
+            "https://propertypilot-ai-5yai.onrender.com/api/v1/new-session",
             {
                 method: "POST"
             }
