@@ -1,4 +1,3 @@
-
 import re
 from typing import Optional, Dict, Any, Tuple
 
@@ -174,10 +173,7 @@ QUESTIONS = [
     ("location", "Which location are you interested in?"),
     ("property_type", "What type of property are you looking for?"),
     ("budget", "What is your budget?"),
-    (
-        "timeline",
-        "When are you looking to move or complete the purchase?",
-    ),
+    ("timeline", "When are you looking to move or complete the purchase?"),
     ("name", "May I have your name?"),
     ("phone", "What is the best phone number to reach you?"),
     ("email", "What is your email address?"),
@@ -230,8 +226,11 @@ def extract_phone(text: str) -> Optional[str]:
     if not text:
         return None
 
-    # International number.
-    # Example: +44 7911 123456
+    # --------------------------------------------------------
+    # International number
+    # Example:
+    # +44 7911 123456
+    # --------------------------------------------------------
 
     international = re.search(
         r"\+\d[\d\s().-]{7,20}\d",
@@ -245,8 +244,11 @@ def extract_phone(text: str) -> Optional[str]:
         if 8 <= len(digits) <= 15:
             return "+" + digits
 
-    # Nigerian local number.
-    # Example: 08012345678
+    # --------------------------------------------------------
+    # Nigerian local number
+    # Example:
+    # 08012345678
+    # --------------------------------------------------------
 
     local_match = re.search(
         r"(?<!\d)(0[789]\d{9})(?!\d)",
@@ -257,8 +259,11 @@ def extract_phone(text: str) -> Optional[str]:
         number = local_match.group(1)
         return "+234" + number[1:]
 
-    # Nigerian international number without +.
-    # Example: 2348012345678
+    # --------------------------------------------------------
+    # Nigerian international number without +
+    # Example:
+    # 2348012345678
+    # --------------------------------------------------------
 
     digits_only = re.sub(r"\D", "", text)
 
@@ -390,6 +395,7 @@ def extract_bedrooms(text: str) -> Optional[int]:
 
     low = text.lower()
 
+    # Example: 4 bedrooms / 4 bedroom / 4 beds
     numeric = re.search(
         r"\b(\d{1,2})\s*(?:bedrooms?|beds?)\b",
         low,
@@ -401,6 +407,7 @@ def extract_bedrooms(text: str) -> Optional[int]:
         if 1 <= value <= 20:
             return value
 
+    # Example: four bedrooms
     for word, number in NUMBER_WORDS.items():
         if re.search(
             rf"\b{re.escape(word)}\s+(?:bedrooms?|beds?)\b",
@@ -558,7 +565,7 @@ def extract_name(text: str) -> Optional[str]:
         return None
 
     # --------------------------------------------------------
-    # Explicit name declarations.
+    # Explicit name declarations
     # --------------------------------------------------------
 
     explicit_patterns = [
@@ -606,9 +613,7 @@ def extract_name(text: str) -> Optional[str]:
         return name.title()
 
     # --------------------------------------------------------
-    # Standalone name.
-    #
-    # Only allowed after property information is complete.
+    # Standalone name
     # --------------------------------------------------------
 
     if re.fullmatch(
@@ -667,7 +672,7 @@ def extract_budget(
     """
     Extract property budget safely.
 
-    Examples supported:
+    Supported examples:
 
         70 million
         70m
@@ -683,6 +688,9 @@ def extract_budget(
         50000000
 
     Timeline and bedroom numbers are ignored.
+
+    Important:
+    Small numbers such as 999 are NOT accepted as budgets.
     """
 
     text = clean(text)
@@ -719,15 +727,13 @@ def extract_budget(
     # ========================================================
     # STEP 3 — EXPLICIT SCALED MONEY
     # ========================================================
-    #
-    # This MUST be checked before plain numbers.
+
+    # Examples:
     #
     # 70 million -> 70,000,000
     # 70m       -> 70,000,000
     # 1.5bn     -> 1,500,000,000
     # 500k      -> 500,000
-    #
-    # ========================================================
 
     scaled_money_pattern = re.compile(
         r"""
@@ -761,13 +767,10 @@ def extract_budget(
 
         if suffix in {"billion", "bn"}:
             multiplier = 1_000_000_000
-
         elif suffix in {"million", "m"}:
             multiplier = 1_000_000
-
         elif suffix in {"thousand", "k"}:
             multiplier = 1_000
-
         else:
             multiplier = 1
 
@@ -787,20 +790,15 @@ def extract_budget(
     # ========================================================
     # STEP 4 — CURRENCY + PLAIN NUMBER
     # ========================================================
-    #
-    # Examples:
-    # ₦50,000,000
-    # N50000000
-    # NGN 50000000
-    #
-    # ========================================================
 
     currency_pattern = re.compile(
         r"(?:₦|NGN|N)\s*(\d[\d,]*(?:\.\d+)?)",
         re.IGNORECASE,
     )
 
-    currency_match = currency_pattern.search(budget_text)
+    currency_match = currency_pattern.search(
+        budget_text
+    )
 
     if currency_match:
         number_text = currency_match.group(1)
@@ -811,7 +809,9 @@ def extract_budget(
         except ValueError:
             return None
 
-        if value <= 0:
+        # Explicit currency amounts below 1,000 are not
+        # treated as property budgets.
+        if value < 1_000:
             return None
 
         return (
@@ -850,11 +850,12 @@ def extract_budget(
     # ========================================================
     # STEP 6 — LARGE PLAIN NUMBER
     # ========================================================
+
+    # Examples:
     #
     # 50000000 -> ₦50,000,000
     #
-    # Numbers such as 999 are deliberately NOT accepted here.
-    # ========================================================
+    # Numbers such as 999 are deliberately NOT accepted.
 
     plain_matches = re.findall(
         r"(?<![\d.])\d{5,12}(?![\d.])",
@@ -994,22 +995,6 @@ def update_lead(
         ]
     )
 
-    # IMPORTANT:
-    #
-    # Do NOT use:
-    #   "I am"
-    #   "I'm"
-    #   "This is"
-    #
-    # because those are commonly used in property requests.
-    #
-    # Only these phrases explicitly indicate a name:
-    #
-    #   My name is Anietie
-    #   My name's Anietie
-    #   Call me Anietie
-    # ========================================================
-
     explicit_name = bool(
         re.search(
             r"\b(?:my\s+name\s+is|my\s+name's|call\s+me)\b",
@@ -1031,10 +1016,26 @@ def update_lead(
             session["name"] = name
 
     # ========================================================
-    # STEP 4 — SAVE MESSAGE
+    # IMPORTANT MESSAGE PROTECTION
     # ========================================================
-
-    session["message"] = message
+    #
+    # DO NOT do this:
+    #
+    # session["message"] = message
+    #
+    # The customer's latest message may be:
+    #
+    #   Anietie Ime
+    #   08012345678
+    #   anietie@example.com
+    #
+    # Those values must NOT overwrite the structured
+    # property summary.
+    #
+    # backend.main.py is responsible for creating the
+    # structured message through update_lead_message().
+    #
+    # ========================================================
 
     return session
 
@@ -1048,7 +1049,6 @@ def next_missing_field(
 ) -> Optional[str]:
 
     for field, _question in QUESTIONS:
-
         value = session.get(field)
 
         if value is None:
@@ -1079,17 +1079,14 @@ def calculate_lead_quality(
     completed = 0
 
     for field in required_property_fields:
-
         value = session.get(field)
 
         if value is None:
             continue
 
         if isinstance(value, str):
-
             if value.strip():
                 completed += 1
-
         else:
             completed += 1
 

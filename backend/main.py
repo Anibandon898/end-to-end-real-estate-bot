@@ -1,18 +1,13 @@
 import os
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 import requests
 from dotenv import load_dotenv
-from fastapi import (
-    FastAPI,
-    UploadFile,
-    File,
-    Form,
-    HTTPException,
-)
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from backend.extractors import (
     clean,
@@ -24,9 +19,9 @@ from backend.extractors import (
 )
 
 
-# =========================================================
+# ============================================================
 # PROJECT CONFIGURATION
-# =========================================================
+# ============================================================
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
@@ -37,14 +32,14 @@ PROJECT_ROOT = os.path.dirname(
 load_dotenv(
     os.path.join(
         PROJECT_ROOT,
-        ".env",
+        ".env"
     )
 )
 
 
-# =========================================================
+# ============================================================
 # FASTAPI APP
-# =========================================================
+# ============================================================
 
 app = FastAPI(
     title="PropertyPilot AI",
@@ -53,9 +48,9 @@ app = FastAPI(
 )
 
 
-# =========================================================
+# ============================================================
 # CORS
-# =========================================================
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,44 +61,54 @@ app.add_middleware(
 )
 
 
-# =========================================================
+# ============================================================
 # ENVIRONMENT VARIABLES
-# =========================================================
+# ============================================================
 
 N8N_WEBHOOK_URL = os.getenv(
     "N8N_WEBHOOK_URL",
-    "http://localhost:5678/webhook/real-estate",
+    "http://localhost:5678/webhook/real-estate"
 )
 
 SUPABASE_URL = os.getenv(
     "SUPABASE_URL",
-    "",
+    ""
 )
 
 SUPABASE_KEY = os.getenv(
     "SUPABASE_KEY",
-    "",
+    ""
 )
+
+
+# ============================================================
+# SUPABASE CONFIGURATION
+# ============================================================
 
 SUPABASE_TABLE = "Real estate lead"
 SUPABASE_BUCKET = "property-images"
 
-# Maximum size for one uploaded property image.
-# 20 MB
+
+# ============================================================
+# IMAGE CONFIGURATION
+# ============================================================
+
 MAX_IMAGE_SIZE = 20 * 1024 * 1024
+MAX_IMAGES = 10
 
 
-# =========================================================
-# IN-MEMORY STORAGE
-# =========================================================
+# ============================================================
+# IN-MEMORY SESSION STORAGE
+# ============================================================
 
 sessions: Dict[str, Dict[str, Any]] = {}
+
 uploaded_images: Dict[str, List[str]] = {}
 
 
-# =========================================================
+# ============================================================
 # REQUEST MODELS
-# =========================================================
+# ============================================================
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -112,7 +117,7 @@ class ChatRequest(BaseModel):
 
 class LeadRequest(BaseModel):
     name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     location: Optional[str] = None
     property_type: Optional[str] = None
@@ -127,16 +132,16 @@ class LeadRequest(BaseModel):
     source: Optional[str] = "real-estate-chatbot"
 
 
-# =========================================================
+# ============================================================
 # BASIC ROUTES
-# =========================================================
+# ============================================================
 
 @app.get("/")
 def root():
     return {
         "success": True,
         "message": "PropertyPilot AI backend is running",
-        "version": "2.5.0",
+        "version": "2.5.0"
     }
 
 
@@ -144,22 +149,16 @@ def root():
 def health():
     return {
         "status": "healthy",
-        "message": "Real Estate Bot API is running",
+        "message": "PropertyPilot AI API is running"
     }
 
 
-# =========================================================
-# START NEW CONVERSATION
-# =========================================================
+# ============================================================
+# CREATE NEW SESSION
+# ============================================================
 
 @app.post("/api/v1/new-session")
 def new_session():
-    """
-    Create a completely fresh PropertyPilot conversation.
-
-    This does not modify or delete existing conversations.
-    It does not change the chatbot interface.
-    """
 
     session_id = (
         "propertypilot-"
@@ -179,81 +178,258 @@ def new_session():
     return {
         "success": True,
         "session_id": session_id,
-        "message": "New PropertyPilot conversation started.",
+        "message": "New PropertyPilot conversation started."
     }
 
 
-# =========================================================
+# ============================================================
 # QUESTION HELPER
-# =========================================================
+# ============================================================
 
 def get_question(field: str) -> str:
+
     for question_field, question_text in QUESTIONS:
+
         if question_field == field:
             return question_text
 
-    return "Could you provide more information about your property needs?"
+    return (
+        "Could you provide more information "
+        "about your property needs?"
+    )
 
 
-# =========================================================
-# SUPABASE IMAGE UPLOAD
-# =========================================================
+# ============================================================
+# BUDGET FORMATTER
+# ============================================================
+
+def format_budget(
+    budget: Any
+) -> Optional[str]:
+
+    if budget is None:
+        return None
+
+    try:
+        amount = float(budget)
+    except (TypeError, ValueError):
+        return None
+
+    return f"₦{amount:,.0f}"
+
+
+# ============================================================
+# BUILD PROPERTY REQUEST SUMMARY
+# ============================================================
+
+def build_lead_summary(
+    session: Dict[str, Any]
+) -> str:
+
+    parts: List[str] = []
+
+    purpose = session.get("purpose")
+    property_type = session.get("property_type")
+    location = session.get("location")
+    budget = session.get("budget")
+    bedrooms = session.get("bedrooms")
+    timeline = session.get("timeline")
+
+    # Purpose
+    if purpose:
+        parts.append(str(purpose))
+
+    # Property type
+    if property_type:
+        parts.append(str(property_type))
+
+    # Location
+    if location:
+        parts.append(
+            f"in {location}"
+        )
+
+    # Bedrooms
+    if bedrooms is not None:
+
+        bedroom_word = (
+            "bedroom"
+            if bedrooms == 1
+            else "bedrooms"
+        )
+
+        parts.append(
+            f"with {bedrooms} {bedroom_word}"
+        )
+
+    # Budget
+    budget_text = format_budget(budget)
+
+    if budget_text:
+
+        parts.append(
+            f"with a budget of {budget_text}"
+        )
+
+    # Timeline
+    if timeline:
+
+        timeline_text = str(
+            timeline
+        ).strip()
+
+        # Prevent:
+        # "within within 1 month"
+        if timeline_text.lower().startswith(
+            "within "
+        ):
+            timeline_text = timeline_text[
+                len("within "):
+            ].strip()
+
+        if timeline_text:
+
+            parts.append(
+                f"within {timeline_text}"
+            )
+
+    # No information yet
+    if not parts:
+
+        return (
+            "Customer is interested in "
+            "a real estate property."
+        )
+
+    summary = " ".join(parts)
+
+    summary = re.sub(
+        r"\s+",
+        " ",
+        summary
+    ).strip()
+
+    return (
+        f"Customer is looking for {summary}."
+    )
+
+
+# ============================================================
+# CHECK FOR CONTACT-ONLY MESSAGE
+# ============================================================
+
+def is_contact_only_message(
+    message: str
+) -> bool:
+
+    text = clean(message)
+
+    if not text:
+        return True
+
+    # Email
+    email_pattern = (
+        r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"
+    )
+
+    if re.fullmatch(
+        email_pattern,
+        text
+    ):
+        return True
+
+    # Phone
+    phone_digits = re.sub(
+        r"\D",
+        "",
+        text
+    )
+
+    if (
+        10 <= len(phone_digits) <= 15
+        and (
+            text.startswith("+")
+            or text.replace(
+                " ",
+                ""
+            ).replace(
+                "-",
+                ""
+            ).isdigit()
+        )
+    ):
+        return True
+
+    return False
+
+
+# ============================================================
+# UPDATE LEAD MESSAGE
+# ============================================================
+
+def update_lead_message(
+    session: Dict[str, Any]
+) -> None:
+
+    summary = build_lead_summary(
+        session
+    )
+
+    session["message"] = summary
+
+    session["main_problem"] = summary
+
+
+# ============================================================
+# IMAGE UPLOAD
+# ============================================================
 
 def upload_one_image(
     file: UploadFile,
-    session_id: str,
+    session_id: str
 ) -> str:
 
-    # -----------------------------------------------------
-    # SUPABASE CONFIGURATION CHECK
-    # -----------------------------------------------------
-
     if not SUPABASE_URL or not SUPABASE_KEY:
+
         raise HTTPException(
             status_code=500,
-            detail="Supabase configuration is missing.",
+            detail=(
+                "Supabase configuration is missing."
+            )
         )
-
-    # -----------------------------------------------------
-    # FILE TYPE CHECK
-    # -----------------------------------------------------
 
     allowed_types = {
         "image/jpeg",
         "image/png",
-        "image/webp",
+        "image/webp"
     }
 
     if file.content_type not in allowed_types:
+
         raise HTTPException(
             status_code=400,
             detail=(
                 "Unsupported image type. "
                 "Please upload JPG, PNG, or WEBP."
-            ),
+            )
         )
-
-    # -----------------------------------------------------
-    # READ FILE
-    # -----------------------------------------------------
 
     contents = file.file.read()
 
-    # -----------------------------------------------------
-    # FILE SIZE CHECK
-    # -----------------------------------------------------
-
     if len(contents) > MAX_IMAGE_SIZE:
+
         raise HTTPException(
             status_code=413,
-            detail="Image is too large. Maximum size is 20MB.",
+            detail=(
+                "Image is too large. "
+                "Maximum size is 20MB."
+            )
         )
 
-    # -----------------------------------------------------
-    # FILE EXTENSION
-    # -----------------------------------------------------
-
-    original_name = file.filename or "property-image.jpg"
+    original_name = (
+        file.filename
+        or "property-image.jpg"
+    )
 
     extension = os.path.splitext(
         original_name
@@ -263,13 +439,10 @@ def upload_one_image(
         ".jpg",
         ".jpeg",
         ".png",
-        ".webp",
+        ".webp"
     }:
-        extension = ".jpg"
 
-    # -----------------------------------------------------
-    # CREATE UNIQUE FILE NAME
-    # -----------------------------------------------------
+        extension = ".jpg"
 
     timestamp = datetime.now().strftime(
         "%Y%m%d%H%M%S%f"
@@ -279,7 +452,7 @@ def upload_one_image(
         session_id
     ).replace(
         " ",
-        "-",
+        "-"
     )
 
     file_name = (
@@ -287,10 +460,6 @@ def upload_one_image(
         f"{timestamp}"
         f"{extension}"
     )
-
-    # -----------------------------------------------------
-    # SUPABASE STORAGE URL
-    # -----------------------------------------------------
 
     storage_url = (
         f"{SUPABASE_URL.rstrip('/')}"
@@ -300,61 +469,56 @@ def upload_one_image(
     )
 
     headers = {
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Authorization": (
+            f"Bearer {SUPABASE_KEY}"
+        ),
         "apikey": SUPABASE_KEY,
         "Content-Type": file.content_type,
-        "x-upsert": "true",
+        "x-upsert": "true"
     }
 
-    # -----------------------------------------------------
-    # UPLOAD TO SUPABASE STORAGE
-    # -----------------------------------------------------
-
     try:
+
         response = requests.post(
             storage_url,
             headers=headers,
             data=contents,
-            timeout=60,
+            timeout=60
         )
+
     except Exception as exc:
+
         print(
             "IMAGE UPLOAD ERROR:",
-            str(exc),
+            str(exc)
         )
 
         raise HTTPException(
             status_code=500,
             detail=(
-                "Could not connect to Supabase Storage."
-            ),
+                "Could not connect to "
+                "Supabase Storage."
+            )
         )
-
-    # -----------------------------------------------------
-    # CHECK SUPABASE RESPONSE
-    # -----------------------------------------------------
 
     if response.status_code not in (
         200,
-        201,
+        201
     ):
+
         print(
             "IMAGE UPLOAD FAILED:",
             response.status_code,
-            response.text,
+            response.text
         )
 
         raise HTTPException(
             status_code=500,
             detail=(
-                "Could not upload property image "
-                "to Supabase Storage."
-            ),
+                "Could not upload property "
+                "image to Supabase Storage."
+            )
         )
-
-    # -----------------------------------------------------
-    # CREATE PUBLIC URL
-    # -----------------------------------------------------
 
     public_url = (
         f"{SUPABASE_URL.rstrip('/')}"
@@ -363,90 +527,86 @@ def upload_one_image(
         f"{file_name}"
     )
 
-    # -----------------------------------------------------
-    # SAVE IMAGE URL TO SESSION
-    # -----------------------------------------------------
-
     if session_id not in uploaded_images:
+
         uploaded_images[session_id] = []
 
-    uploaded_images[session_id].append(
-        public_url
-    )
+    if len(
+        uploaded_images[session_id]
+    ) < MAX_IMAGES:
+
+        uploaded_images[
+            session_id
+        ].append(
+            public_url
+        )
 
     print(
         "PROPERTY IMAGE UPLOADED:",
-        public_url,
+        public_url
     )
 
     return public_url
 
 
-# =========================================================
+# ============================================================
 # IMAGE UPLOAD ENDPOINT
-# =========================================================
+# ============================================================
 
 @app.post("/api/v1/upload-image")
 async def upload_image(
     session_id: str = Form(...),
     file: Optional[UploadFile] = File(None),
-    files: Optional[List[UploadFile]] = File(None),
+    files: Optional[List[UploadFile]] = File(None)
 ):
 
-    # -----------------------------------------------------
-    # SESSION CHECK
-    # -----------------------------------------------------
-
     if not session_id.strip():
+
         raise HTTPException(
             status_code=400,
-            detail="session_id is required.",
+            detail="session_id is required."
         )
 
     uploaded_urls: List[str] = []
 
-    # -----------------------------------------------------
-    # SINGLE IMAGE
-    # -----------------------------------------------------
-
+    # Single image
     if file is not None:
-        uploaded_urls.append(
-            upload_one_image(
-                file,
-                session_id,
+
+        if len(uploaded_urls) < MAX_IMAGES:
+
+            uploaded_urls.append(
+                upload_one_image(
+                    file,
+                    session_id
+                )
             )
-        )
 
-    # -----------------------------------------------------
-    # MULTIPLE IMAGES
-    # -----------------------------------------------------
-
+    # Multiple images
     if files:
+
         for current_file in files:
 
-            if len(uploaded_urls) >= 10:
+            if (
+                len(uploaded_urls)
+                >= MAX_IMAGES
+            ):
                 break
 
             uploaded_urls.append(
                 upload_one_image(
                     current_file,
-                    session_id,
+                    session_id
                 )
             )
 
-    # -----------------------------------------------------
-    # NO IMAGE
-    # -----------------------------------------------------
-
     if not uploaded_urls:
+
         raise HTTPException(
             status_code=400,
-            detail="No image file was provided.",
+            detail=(
+                "No image file was provided."
+            )
         )
-
-    # -----------------------------------------------------
-    # RESPONSE
-    # -----------------------------------------------------
 
     return {
         "success": True,
@@ -455,21 +615,25 @@ async def upload_image(
         "url": uploaded_urls[0],
         "image_url": uploaded_urls[0],
         "property_images": uploaded_urls,
-        "count": len(uploaded_urls),
+        "count": len(uploaded_urls)
     }
 
 
-# =========================================================
+# ============================================================
 # SEND LEAD TO N8N
-# =========================================================
+# ============================================================
 
 def send_to_n8n(
-    session: Dict[str, Any],
+    session: Dict[str, Any]
 ) -> Dict[str, Any]:
 
     property_images = uploaded_images.get(
         session.get("session_id", ""),
-        [],
+        []
+    )
+
+    update_lead_message(
+        session
     )
 
     payload = {
@@ -477,21 +641,30 @@ def send_to_n8n(
         "email": session.get("email"),
         "phone": session.get("phone"),
         "location": session.get("location"),
-        "property_type": session.get("property_type"),
+        "property_type": session.get(
+            "property_type"
+        ),
         "purpose": session.get("purpose"),
         "budget": session.get("budget"),
         "bedrooms": session.get("bedrooms"),
         "timeline": session.get("timeline"),
         "message": session.get("message"),
-        "lead_quality": session.get("lead_quality"),
-        "main_problem": session.get("message"),
+        "lead_quality": session.get(
+            "lead_quality"
+        ),
+        "main_problem": session.get(
+            "main_problem"
+        ),
         "recommended_action": (
             "Contact immediately"
-            if session.get("lead_quality") == "HOT"
-            else "Follow up with property recommendations"
+            if session.get(
+                "lead_quality"
+            ) == "HOT"
+            else "Follow up with property "
+                 "recommendations"
         ),
         "property_images": property_images,
-        "source": "real-estate-webhook",
+        "source": "real-estate-webhook"
     }
 
     print(
@@ -509,17 +682,17 @@ def send_to_n8n(
         response = requests.post(
             N8N_WEBHOOK_URL,
             json=payload,
-            timeout=30,
+            timeout=30
         )
 
         print(
             "N8N STATUS:",
-            response.status_code,
+            response.status_code
         )
 
         print(
             "N8N RESPONSE:",
-            response.text,
+            response.text
         )
 
         success = (
@@ -529,46 +702,55 @@ def send_to_n8n(
         )
 
         if success:
+
             session["n8n_sent"] = True
 
         return {
             "sent": success,
             "status_code": response.status_code,
-            "response": response.text,
+            "response": response.text
         }
 
     except Exception as exc:
 
         print(
             "N8N ERROR:",
-            str(exc),
+            str(exc)
         )
 
         return {
             "sent": False,
             "status_code": None,
-            "response": str(exc),
+            "response": str(exc)
         }
 
 
-# =========================================================
+# ============================================================
 # SAVE LEAD TO SUPABASE
-# =========================================================
+# ============================================================
 
 def save_to_supabase(
-    session: Dict[str, Any],
+    session: Dict[str, Any]
 ) -> Dict[str, Any]:
 
     if not SUPABASE_URL or not SUPABASE_KEY:
+
         return {
             "saved": False,
             "status_code": None,
-            "response": "Supabase configuration is missing.",
+            "response": (
+                "Supabase configuration "
+                "is missing."
+            )
         }
+
+    update_lead_message(
+        session
+    )
 
     property_images = uploaded_images.get(
         session.get("session_id", ""),
-        [],
+        []
     )
 
     payload = {
@@ -576,24 +758,30 @@ def save_to_supabase(
         "email": session.get("email"),
         "phone": session.get("phone"),
         "location": session.get("location"),
-        "property_type": session.get("property_type"),
+        "property_type": session.get(
+            "property_type"
+        ),
         "purpose": session.get("purpose"),
         "budget": session.get("budget"),
         "bedrooms": session.get("bedrooms"),
         "timeline": session.get("timeline"),
         "message": session.get("message"),
-        "lead_quality": session.get("lead_quality"),
-        "main_problem": session.get("message"),
+        "lead_quality": session.get(
+            "lead_quality"
+        ),
+        "main_problem": session.get(
+            "main_problem"
+        ),
         "recommended_action": (
             "Contact immediately"
-            if session.get("lead_quality") == "HOT"
-            else "Follow up with property recommendations"
+            if session.get(
+                "lead_quality"
+            ) == "HOT"
+            else "Follow up with property "
+                 "recommendations"
         ),
-
-        # Supabase property_images is an ARRAY column.
         "property_images": property_images,
-
-        "source": "real-estate-chatbot",
+        "source": "real-estate-chatbot"
     }
 
     print(
@@ -608,7 +796,7 @@ def save_to_supabase(
 
     table_name = requests.utils.quote(
         SUPABASE_TABLE,
-        safe="",
+        safe=""
     )
 
     url = (
@@ -622,7 +810,7 @@ def save_to_supabase(
             f"Bearer {SUPABASE_KEY}"
         ),
         "Content-Type": "application/json",
-        "Prefer": "return=representation",
+        "Prefer": "return=representation"
     }
 
     try:
@@ -631,17 +819,17 @@ def save_to_supabase(
             url,
             headers=headers,
             json=payload,
-            timeout=30,
+            timeout=30
         )
 
         print(
             "SUPABASE STATUS:",
-            response.status_code,
+            response.status_code
         )
 
         print(
             "SUPABASE RESPONSE:",
-            response.text,
+            response.text
         )
 
         success = (
@@ -651,35 +839,38 @@ def save_to_supabase(
         )
 
         if success:
-            session["supabase_saved"] = True
+
+            session[
+                "supabase_saved"
+            ] = True
 
         return {
             "saved": success,
             "status_code": response.status_code,
-            "response": response.text,
+            "response": response.text
         }
 
     except Exception as exc:
 
         print(
             "SUPABASE ERROR:",
-            str(exc),
+            str(exc)
         )
 
         return {
             "saved": False,
             "status_code": None,
-            "response": str(exc),
+            "response": str(exc)
         }
 
 
-# =========================================================
+# ============================================================
 # CHAT ENDPOINT
-# =========================================================
+# ============================================================
 
 @app.post("/api/v1/chat")
 def chat(
-    request: ChatRequest,
+    request: ChatRequest
 ):
 
     session_id = clean(
@@ -691,21 +882,22 @@ def chat(
     )
 
     if not session_id:
+
         raise HTTPException(
             status_code=400,
-            detail="session_id is required.",
+            detail=(
+                "session_id is required."
+            )
         )
 
     if not message:
+
         raise HTTPException(
             status_code=400,
-            detail="message is required.",
+            detail="message is required."
         )
 
-    # -----------------------------------------------------
-    # CREATE SESSION
-    # -----------------------------------------------------
-
+    # Create session if necessary
     if session_id not in sessions:
 
         session = create_session()
@@ -716,73 +908,73 @@ def chat(
 
     session = sessions[session_id]
 
-    # -----------------------------------------------------
-    # UPDATE LEAD
-    # -----------------------------------------------------
-
+    # Extract information from the user's message
     update_lead(
         session,
-        message,
+        message
     )
 
-    # -----------------------------------------------------
-    # CALCULATE LEAD QUALITY
-    # -----------------------------------------------------
+    # Calculate lead quality
+    session["lead_quality"] = (
+        calculate_lead_quality(
+            session
+        )
+    )
 
-    session["lead_quality"] = calculate_lead_quality(
+    # Build property summary.
+    #
+    # IMPORTANT:
+    # We do NOT save the final phone/email
+    # message as the property request.
+    update_lead_message(
         session
     )
 
-    # -----------------------------------------------------
-    # SAVE LAST MESSAGE
-    # -----------------------------------------------------
-
-    session["message"] = message
-
-    # -----------------------------------------------------
-    # FIND NEXT MISSING FIELD
-    # -----------------------------------------------------
-
+    # Find next missing field
     missing_field = next_missing_field(
         session
     )
 
-    # -----------------------------------------------------
-    # COMPLETE LEAD
-    # -----------------------------------------------------
+    # ========================================================
+    # LEAD COMPLETE
+    # ========================================================
 
     if missing_field is None:
 
         n8n_result = {
             "sent": session.get(
                 "n8n_sent",
-                False,
+                False
             )
         }
 
         supabase_result = {
             "saved": session.get(
                 "supabase_saved",
-                False,
+                False
             )
         }
 
+        # Send to n8n once
         if not session.get(
             "n8n_sent",
-            False,
+            False
         ):
 
             n8n_result = send_to_n8n(
                 session
             )
 
+        # Save to Supabase once
         if not session.get(
             "supabase_saved",
-            False,
+            False
         ):
 
-            supabase_result = save_to_supabase(
-                session
+            supabase_result = (
+                save_to_supabase(
+                    session
+                )
             )
 
         session["lead_complete"] = True
@@ -790,52 +982,71 @@ def chat(
         return {
             "success": True,
             "session_id": session_id,
-
             "reply": (
-                "Thank you. I have all the "
-                "details I need. Our team will "
-                "review your request and get "
+                "Thank you. I have all "
+                "the details I need. "
+                "Our team will review "
+                "your request and get "
                 "back to you shortly."
             ),
-
             "missing_field": None,
             "lead_complete": True,
-
             "lead_quality": session.get(
                 "lead_quality"
             ),
-
             "lead": {
-                "name": session.get("name"),
-                "email": session.get("email"),
-                "phone": session.get("phone"),
-                "location": session.get("location"),
+                "name": session.get(
+                    "name"
+                ),
+                "email": session.get(
+                    "email"
+                ),
+                "phone": session.get(
+                    "phone"
+                ),
+                "location": session.get(
+                    "location"
+                ),
                 "property_type": session.get(
                     "property_type"
                 ),
-                "purpose": session.get("purpose"),
-                "budget": session.get("budget"),
-                "bedrooms": session.get("bedrooms"),
-                "timeline": session.get("timeline"),
-                "message": session.get("message"),
+                "purpose": session.get(
+                    "purpose"
+                ),
+                "budget": session.get(
+                    "budget"
+                ),
+                "bedrooms": session.get(
+                    "bedrooms"
+                ),
+                "timeline": session.get(
+                    "timeline"
+                ),
+                "message": session.get(
+                    "message"
+                ),
+                "main_problem": session.get(
+                    "main_problem"
+                ),
                 "lead_quality": session.get(
                     "lead_quality"
                 ),
-                "property_images": uploaded_images.get(
-                    session_id,
-                    [],
-                ),
+                "property_images": (
+                    uploaded_images.get(
+                        session_id,
+                        []
+                    )
+                )
             },
-
             "integrations": {
                 "n8n": n8n_result,
-                "supabase": supabase_result,
-            },
+                "supabase": supabase_result
+            }
         }
 
-    # -----------------------------------------------------
-    # CONTINUE CONVERSATION
-    # -----------------------------------------------------
+    # ========================================================
+    # ASK NEXT QUESTION
+    # ========================================================
 
     reply = get_question(
         missing_field
@@ -847,55 +1058,72 @@ def chat(
         "reply": reply,
         "missing_field": missing_field,
         "lead_complete": False,
-
         "lead_quality": session.get(
             "lead_quality",
-            "COLD",
+            "COLD"
         ),
-
         "integrations": {
             "n8n": {
                 "sent": session.get(
                     "n8n_sent",
-                    False,
+                    False
                 )
             },
-
             "supabase": {
                 "saved": session.get(
                     "supabase_saved",
-                    False,
+                    False
                 )
-            },
+            }
         },
-
         "lead": {
-            "name": session.get("name"),
-            "email": session.get("email"),
-            "phone": session.get("phone"),
-            "location": session.get("location"),
+            "name": session.get(
+                "name"
+            ),
+            "email": session.get(
+                "email"
+            ),
+            "phone": session.get(
+                "phone"
+            ),
+            "location": session.get(
+                "location"
+            ),
             "property_type": session.get(
                 "property_type"
             ),
-            "purpose": session.get("purpose"),
-            "budget": session.get("budget"),
-            "bedrooms": session.get("bedrooms"),
-            "timeline": session.get("timeline"),
-            "property_images": uploaded_images.get(
-                session_id,
-                [],
+            "purpose": session.get(
+                "purpose"
             ),
-        },
+            "budget": session.get(
+                "budget"
+            ),
+            "bedrooms": session.get(
+                "bedrooms"
+            ),
+            "timeline": session.get(
+                "timeline"
+            ),
+            "message": session.get(
+                "message"
+            ),
+            "property_images": (
+                uploaded_images.get(
+                    session_id,
+                    []
+                )
+            )
+        }
     }
 
 
-# =========================================================
+# ============================================================
 # DIRECT LEAD ENDPOINT
-# =========================================================
+# ============================================================
 
 @app.post("/api/v1/leads")
 def create_lead(
-    lead: LeadRequest,
+    lead: LeadRequest
 ):
 
     session = create_session()
@@ -909,20 +1137,23 @@ def create_lead(
 
     session["name"] = lead.name
 
-    session["email"] = (
-        str(lead.email)
-        if lead.email
-        else None
-    )
+    session["email"] = lead.email
 
     session["phone"] = lead.phone
+
     session["location"] = lead.location
-    session["property_type"] = lead.property_type
+
+    session["property_type"] = (
+        lead.property_type
+    )
+
     session["purpose"] = lead.purpose
+
     session["budget"] = lead.budget
+
     session["bedrooms"] = lead.bedrooms
+
     session["timeline"] = lead.timeline
-    session["message"] = lead.message
 
     session["lead_quality"] = (
         lead.lead_quality
@@ -931,12 +1162,18 @@ def create_lead(
         )
     )
 
+    update_lead_message(
+        session
+    )
+
     n8n_result = send_to_n8n(
         session
     )
 
-    supabase_result = save_to_supabase(
-        session
+    supabase_result = (
+        save_to_supabase(
+            session
+        )
     )
 
     return {
@@ -944,44 +1181,60 @@ def create_lead(
         "message": (
             "Lead received and processed."
         ),
-
         "lead": {
-            "name": lead.name,
-
-            "email": (
-                str(lead.email)
-                if lead.email
-                else None
+            "name": session.get(
+                "name"
             ),
-
-            "phone": lead.phone,
-            "location": lead.location,
-            "property_type": lead.property_type,
-            "purpose": lead.purpose,
-            "budget": lead.budget,
-            "bedrooms": lead.bedrooms,
-            "timeline": lead.timeline,
-
+            "email": session.get(
+                "email"
+            ),
+            "phone": session.get(
+                "phone"
+            ),
+            "location": session.get(
+                "location"
+            ),
+            "property_type": session.get(
+                "property_type"
+            ),
+            "purpose": session.get(
+                "purpose"
+            ),
+            "budget": session.get(
+                "budget"
+            ),
+            "bedrooms": session.get(
+                "bedrooms"
+            ),
+            "timeline": session.get(
+                "timeline"
+            ),
+            "message": session.get(
+                "message"
+            ),
+            "main_problem": session.get(
+                "main_problem"
+            ),
             "lead_quality": session.get(
                 "lead_quality"
             ),
-
-            "property_images": uploaded_images.get(
-                session.get(
-                    "session_id"
-                ),
-                [],
-            ),
+            "property_images": (
+                uploaded_images.get(
+                    session.get(
+                        "session_id"
+                    ),
+                    []
+                )
+            )
         },
-
         "n8n": n8n_result,
-        "supabase": supabase_result,
+        "supabase": supabase_result
     }
 
 
-# =========================================================
+# ============================================================
 # STARTUP MESSAGE
-# =========================================================
+# ============================================================
 
 @app.on_event("startup")
 def startup_event():
@@ -993,8 +1246,10 @@ def startup_event():
         "==============================================\n"
         "FastAPI: RUNNING\n"
         f"n8n: {N8N_WEBHOOK_URL}\n"
-        f"Supabase: {'CONFIGURED' if SUPABASE_URL and SUPABASE_KEY else 'NOT CONFIGURED'}\n"
+        f"Supabase: "
+        f"{'CONFIGURED' if SUPABASE_URL and SUPABASE_KEY else 'NOT CONFIGURED'}\n"
         f"Storage bucket: {SUPABASE_BUCKET}\n"
         "Maximum image size: 20MB\n"
+        "Maximum images: 10\n"
         "==============================================\n"
     )
