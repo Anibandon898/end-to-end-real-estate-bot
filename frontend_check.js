@@ -14,8 +14,8 @@
     Production Render backend.
 */
 
-const API_URL = "http://127.0.0.1:8000/api/v1/chat";
-const UPLOAD_API_URL = "http://127.0.0.1:8000/api/v1/upload-image";
+const API_URL = "https://propertypilot-ai-api.onrender.com/api/v1/chat";
+const UPLOAD_API_URL = "https://propertypilot-ai-api.onrender.com/api/v1/upload-image";
 const SESSION_KEY =
     "propertypilot_session";
 
